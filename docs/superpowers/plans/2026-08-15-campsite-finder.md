@@ -32,13 +32,19 @@
 
 - [ ] **Step 1: Scaffold the Angular project into the current directory**
 
-Run (from the repo root, which currently contains only `.git/` and `docs/`):
+The repo root already contains `.git/`, `docs/`, and `.gitignore` (which ignores `.superpowers/`, used by the SDD workflow driving this plan), so the directory is not empty and `ng new` needs `--force` to proceed:
 
 ```bash
-npx @angular/cli@latest new campsite-finder --directory=. --style=scss --routing --skip-git --ssr=false
+npx @angular/cli@latest new campsite-finder --directory=. --style=scss --routing --skip-git --ssr=false --force
 ```
 
 If prompted interactively for anything not covered by a flag, accept the default.
+
+`ng new --force` overwrites `.gitignore` with Angular's generated one, which does not know about `.superpowers/`. Restore that line by appending it back:
+
+```bash
+echo ".superpowers/" >> .gitignore
+```
 
 - [ ] **Step 2: Verify the scaffold builds and its default test passes**
 
