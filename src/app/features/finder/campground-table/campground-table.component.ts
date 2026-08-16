@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { Campground } from '../../../core/models/campground.model';
@@ -7,7 +7,6 @@ import { Campground } from '../../../core/models/campground.model';
   selector: 'app-campground-table',
   standalone: true,
   imports: [TableModule, DecimalPipe],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <p-table
       [value]="campgrounds"
@@ -19,9 +18,9 @@ import { Campground } from '../../../core/models/campground.model';
     >
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
-          <th pSortableColumn="parkCode">Park <p-sortIcon field="parkCode" /></th>
-          <th pSortableColumn="distanceMeters">Distance <p-sortIcon field="distanceMeters" /></th>
+          <th pSortableColumn="name">Name <p-sort-icon field="name" /></th>
+          <th pSortableColumn="parkCode">Park <p-sort-icon field="parkCode" /></th>
+          <th pSortableColumn="distanceMeters">Distance <p-sort-icon field="distanceMeters" /></th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-campground>
