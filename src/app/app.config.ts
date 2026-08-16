@@ -15,6 +15,7 @@ export const appConfig: ApplicationConfig = {
       theme: {
         preset: Aura,
       },
+      license: 'eyJpZCI6ImVhYWFjMzJhLWZkMDMtNDg3ZC04ZDc2LTk5NjEyMWE0YTZhZCIsInByb2R1Y3QiOiJwcmltZXVpIiwidGllciI6ImNvbW11bml0eSIsInR5cGUiOiJkZXYiLCJpYXQiOjE3ODY5MTgxMDIsImV4cCI6MTgxODQ1NDEwMn0.88HB7YEVupCudlmHZqsUboqAM8zFUvmTATmlLJcK3s637mD0fYpaSrgqXaTjzWzyLXz0gptt4nZbqi2l9FF8Bg',
     }),
   ],
 };
