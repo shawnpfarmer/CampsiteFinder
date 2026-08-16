@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
-import { FinderComponent } from './features/finder/finder.component';
 
 export const routes: Routes = [
-  { path: '', component: FinderComponent },
+  {
+    path: '',
+    loadComponent: () => import('./features/finder/finder.component').then((m) => m.FinderComponent),
+  },
 ];
