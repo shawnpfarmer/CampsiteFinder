@@ -478,11 +478,9 @@ Deno.serve(async (_req) => {
 
 - [ ] **Step 6: Deploy the function and set its secret**
 
-Using `mcp__claude_ai_Supabase__deploy_edge_function`, deploy `nps-sync`. Then set the NPS API key secret (via the Supabase CLI or dashboard — `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by Supabase and don't need to be set manually):
+Using `mcp__claude_ai_Supabase__deploy_edge_function`, deploy `nps-sync`.
 
-```bash
-supabase secrets set NPS_API_KEY=<your-nps-api-key-from-developer.nps.gov>
-```
+The NPS API key secret must be set by a human, not this implementer: no Supabase CLI is installed in this environment, and a real secret value shouldn't pass through subagent-run shell commands anyway. **Stop here and ask the human partner to set it** via the Supabase dashboard: Project Settings → Edge Functions → Secrets → add `NPS_API_KEY` with their key from developer.nps.gov. (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by Supabase and don't need to be set manually.) Report status NEEDS_CONTEXT with this ask if the secret isn't confirmed set yet; do not attempt to work around it.
 
 - [ ] **Step 7: Trigger the sync once manually and verify data landed**
 
