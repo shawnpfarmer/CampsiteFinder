@@ -1,0 +1,25 @@
+<div class="finder">
+  @if (loading()) {
+    <p-message severity="info">Finding campgrounds near you...</p-message>
+  }
+
+  @if (error()) {
+    <p-message severity="warn">{{ error() }}</p-message>
+    <form class="manual-location" (ngSubmit)="onManualSubmit()">
+      <input pInputText type="number" step="any" placeholder="Latitude" [(ngModel)]="manualLat" name="manualLat" required />
+      <input pInputText type="number" step="any" placeholder="Longitude" [(ngModel)]="manualLng" name="manualLng" required />
+      <button pButton type="submit" label="Search this location"></button>
+    </form>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="finder-layout">
+      <app-campground-map [campgrounds]="campgrounds()" [selectedId]="selected()?.id ?? null" />
+      <app-campground-table
+        [campgrounds]="campgrounds()"
+        [selected]="selected()"
+        (selectedChange)="onSelectionChange($event)"
+      />
+    </div>
+  }
+</div>

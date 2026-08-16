@@ -1,0 +1,23 @@
+.finder-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+
+    app-campground-map {
+      flex: 1 1 60%;
+    }
+
+    app-campground-table {
+      flex: 1 1 40%;
+    }
+  }
+}
+
+.manual-location {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
