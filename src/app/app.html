@@ -1,1 +1,10 @@
+<nav class="app-nav">
+  <a routerLink="/">Finder</a>
+  <a routerLink="/favorites">Favorites</a>
+  @if (supabase.isAuthenticated) {
+    <button pButton [text]="true" label="Sign out" (click)="onSignOut()"></button>
+  } @else {
+    <a routerLink="/login">Sign in</a>
+  }
+</nav>
 <router-outlet />

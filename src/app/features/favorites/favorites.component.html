@@ -1,0 +1,11 @@
+<div class="finder-layout">
+  <app-campground-map [campgrounds]="campgrounds()" [selectedId]="selected()?.id ?? null" />
+  <app-campground-table
+    [campgrounds]="campgrounds()"
+    [selected]="selected()"
+    (selectedChange)="onSelectionChange($event)"
+  />
+</div>
+@if (campgrounds().length === 0) {
+  <p>No favorites yet. Star a campground from the Finder to save it here.</p>
+}

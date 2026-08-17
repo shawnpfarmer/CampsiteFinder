@@ -1,9 +1,15 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/finder/finder.component').then((m) => m.FinderComponent),
+  },
+  {
+    path: 'favorites',
+    loadComponent: () => import('./features/favorites/favorites.component').then((m) => m.FavoritesComponent),
+    canActivate: [authGuard],
   },
   {
     path: 'login',
