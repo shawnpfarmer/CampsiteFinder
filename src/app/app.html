@@ -2,7 +2,7 @@
   <a routerLink="/">Finder</a>
   <a routerLink="/favorites">Favorites</a>
   @if (supabase.isAuthenticated) {
-    <button pButton [text]="true" label="Sign out" (click)="onSignOut()"></button>
+    <button pButton [text]="true" (click)="onSignOut()">Sign out</button>
   } @else {
     <a routerLink="/login">Sign in</a>
   }

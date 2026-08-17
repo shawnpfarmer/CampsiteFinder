@@ -8,7 +8,7 @@
     <form class="manual-location" (ngSubmit)="onManualSubmit()">
       <input pInputText type="number" step="any" placeholder="Latitude" [(ngModel)]="manualLat" name="manualLat" required />
       <input pInputText type="number" step="any" placeholder="Longitude" [(ngModel)]="manualLng" name="manualLng" required />
-      <button pButton type="submit" label="Search this location"></button>
+      <button pButton type="submit">Search this location</button>
     </form>
   }
 
