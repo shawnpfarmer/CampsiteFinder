@@ -3,6 +3,7 @@
   <app-campground-table
     [campgrounds]="campgrounds()"
     [selected]="selected()"
+    [showDistance]="false"
     (selectedChange)="onSelectionChange($event)"
   />
 </div>

@@ -20,4 +20,21 @@ describe('CampgroundTableComponent', () => {
 
     expect(emitted).toBe(campground);
   });
+
+  it('shows the Distance column by default', () => {
+    component.campgrounds = [];
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.textContent;
+    expect(header).toContain('Distance');
+  });
+
+  it('hides the Distance column when showDistance is false', () => {
+    component.campgrounds = [];
+    component.showDistance = false;
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.textContent;
+    expect(header).not.toContain('Distance');
+  });
 });

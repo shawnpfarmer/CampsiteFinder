@@ -32,4 +32,28 @@ export class CampgroundsService {
       distanceMeters: row.distance_m,
     }));
   }
+
+  async getByIds(ids: string[]): Promise<Campground[]> {
+    const { data, error } = await this.supabase.client.rpc('get_campgrounds_by_ids', {
+      campground_ids: ids,
+    });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      parkCode: row.park_code,
+      name: row.name,
+      description: row.description,
+      lat: row.lat,
+      lng: row.lng,
+      amenities: row.amenities ?? {},
+      fees: row.fees ?? [],
+      reservationUrl: row.reservation_url,
+      directionsUrl: row.directions_url,
+      images: row.images ?? [],
+      contact: row.contact,
+      distanceMeters: 0,
+    }));
+  }
 }

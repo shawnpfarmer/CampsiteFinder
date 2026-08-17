@@ -39,4 +39,27 @@ describe('CampgroundsService', () => {
 
     await expect(service.getNearest({ lat: 0, lng: 0 })).rejects.toThrow();
   });
+
+  it('maps RPC rows to Campground objects for getByIds', async () => {
+    rpcSpy.mockResolvedValue({
+      data: [{
+        id: 'cg-1', park_code: 'acad', name: 'Blackwoods', description: 'desc',
+        lat: 44.31, lng: -68.2, amenities: {}, fees: [], reservation_url: 'https://x',
+        directions_url: 'https://y', images: [], contact: {},
+      }],
+      error: null,
+    });
+
+    const result = await service.getByIds(['cg-1']);
+
+    expect(rpcSpy).toHaveBeenCalledWith('get_campgrounds_by_ids', { campground_ids: ['cg-1'] });
+    expect(result[0].name).toBe('Blackwoods');
+    expect(result[0].distanceMeters).toBe(0);
+  });
+
+  it('throws when the getByIds RPC call errors', async () => {
+    rpcSpy.mockResolvedValue({ data: null, error: new Error('boom') });
+
+    await expect(service.getByIds(['cg-1'])).rejects.toThrow();
+  });
 });

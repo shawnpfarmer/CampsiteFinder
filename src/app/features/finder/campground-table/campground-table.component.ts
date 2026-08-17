@@ -21,7 +21,9 @@ import { Campground } from '../../../core/models/campground.model';
         <tr>
           <th pSortableColumn="name">Name <p-sort-icon field="name" /></th>
           <th pSortableColumn="parkCode">Park <p-sort-icon field="parkCode" /></th>
-          <th pSortableColumn="distanceMeters">Distance <p-sort-icon field="distanceMeters" /></th>
+          @if (showDistance) {
+            <th pSortableColumn="distanceMeters">Distance <p-sort-icon field="distanceMeters" /></th>
+          }
           <th></th>
         </tr>
       </ng-template>
@@ -29,7 +31,9 @@ import { Campground } from '../../../core/models/campground.model';
         <tr [pSelectableRow]="campground">
           <td>{{ campground.name }}</td>
           <td>{{ campground.parkCode }}</td>
-          <td>{{ campground.distanceMeters / 1609.34 | number: '1.1-1' }} mi</td>
+          @if (showDistance) {
+            <td>{{ campground.distanceMeters / 1609.34 | number: '1.1-1' }} mi</td>
+          }
           <td><app-favorite-toggle [campgroundId]="campground.id" /></td>
         </tr>
       </ng-template>
@@ -39,6 +43,7 @@ import { Campground } from '../../../core/models/campground.model';
 export class CampgroundTableComponent {
   @Input({ required: true }) campgrounds: Campground[] = [];
   @Input() selected: Campground | null = null;
+  @Input() showDistance = true;
   @Output() selectedChange = new EventEmitter<Campground | null>();
 
   onSelectionChange(campground: Campground): void {
