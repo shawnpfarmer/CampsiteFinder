@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FavoriteToggleComponent } from '../../../shared/favorite-toggle/favorite-toggle.component';
 import { Campground } from '../../../core/models/campground.model';
@@ -7,7 +8,7 @@ import { Campground } from '../../../core/models/campground.model';
 @Component({
   selector: 'app-campground-table',
   standalone: true,
-  imports: [TableModule, DecimalPipe, FavoriteToggleComponent],
+  imports: [TableModule, DecimalPipe, RouterLink, FavoriteToggleComponent],
   template: `
     <p-table
       [value]="campgrounds"
@@ -29,7 +30,7 @@ import { Campground } from '../../../core/models/campground.model';
       </ng-template>
       <ng-template #body let-campground>
         <tr [pSelectableRow]="campground">
-          <td>{{ campground.name }}</td>
+          <td><a [routerLink]="['/campground', campground.id]">{{ campground.name }}</a></td>
           <td>{{ campground.parkCode }}</td>
           @if (showDistance) {
             <td>{{ campground.distanceMeters / 1609.34 | number: '1.1-1' }} mi</td>

@@ -19,4 +19,11 @@ export const routes: Routes = [
     path: 'signup',
     loadComponent: () => import('./features/auth/signup.component').then((m) => m.SignupComponent),
   },
+  {
+    path: 'campground/:id',
+    loadComponent: () =>
+      import('./features/campground-detail/campground-detail.component').then(
+        (m) => m.CampgroundDetailComponent,
+      ),
+  },
 ];
