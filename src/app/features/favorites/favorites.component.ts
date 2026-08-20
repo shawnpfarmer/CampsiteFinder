@@ -12,7 +12,7 @@ import { Campground } from '../../core/models/campground.model';
   templateUrl: './favorites.component.html',
 })
 export class FavoritesComponent implements OnInit {
-  private readonly favorites = inject(FavoritesService);
+  readonly favorites = inject(FavoritesService);
   private readonly campgroundsService = inject(CampgroundsService);
 
   readonly campgrounds = signal<Campground[]>([]);
@@ -31,5 +31,9 @@ export class FavoritesComponent implements OnInit {
 
   onSelectionChange(campground: Campground | null): void {
     this.selected.set(campground);
+  }
+
+  onNoteChange(event: { campgroundId: string; note: string }): void {
+    this.favorites.updateNote(event.campgroundId, event.note);
   }
 }

@@ -4,7 +4,10 @@
     [campgrounds]="campgrounds()"
     [selected]="selected()"
     [showDistance]="false"
+    [showNotes]="true"
+    [notes]="favorites.favoriteNotes()"
     (selectedChange)="onSelectionChange($event)"
+    (noteChange)="onNoteChange($event)"
   />
 </div>
 @if (campgrounds().length === 0) {

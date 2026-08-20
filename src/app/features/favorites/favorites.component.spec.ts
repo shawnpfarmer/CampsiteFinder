@@ -47,4 +47,21 @@ describe('FavoritesComponent', () => {
 
     expect(component.campgrounds()).toEqual([]);
   });
+
+  it('delegates note edits to FavoritesService.updateNote', () => {
+    const updateNoteSpy = vi.fn();
+    TestBed.configureTestingModule({
+      imports: [FavoritesComponent],
+      providers: [
+        { provide: FavoritesService, useValue: { updateNote: updateNoteSpy } },
+        { provide: CampgroundsService, useValue: { getByIds: vi.fn() } },
+      ],
+    });
+
+    const component = TestBed.createComponent(FavoritesComponent).componentInstance;
+
+    component.onNoteChange({ campgroundId: 'cg-1', note: 'book early' });
+
+    expect(updateNoteSpy).toHaveBeenCalledWith('cg-1', 'book early');
+  });
 });
