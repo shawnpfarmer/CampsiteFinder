@@ -13,3 +13,30 @@
 @if (campgrounds().length === 0) {
   <p>No favorites yet. Star a campground from the Finder to save it here.</p>
 }
+
+@if (campgrounds().length > 0) {
+  <button pButton [text]="true" (click)="togglePlanning()">
+    {{ planningTrip() ? 'Cancel' : 'Plan a trip' }}
+  </button>
+}
+
+@if (planningTrip()) {
+  <div class="trip-planner">
+    <input pInputText type="text" placeholder="Trip name" [(ngModel)]="tripName" name="tripName" />
+    <ul>
+      @for (campground of campgrounds(); track campground.id) {
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedForTrip().has(campground.id)"
+              (change)="toggleSelectedForTrip(campground.id)"
+            />
+            {{ campground.name }}
+          </label>
+        </li>
+      }
+    </ul>
+    <button pButton [disabled]="!canSaveTrip" (click)="saveTrip()">Save Trip</button>
+  </div>
+}
