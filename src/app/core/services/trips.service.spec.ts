@@ -162,6 +162,8 @@ describe('TripsService', () => {
 
     await service.reorderStops('trip-1', ['stop-b', 'stop-a']);
 
+    expect(builder.eq).toHaveBeenCalledWith('id', 'stop-b');
+    expect(builder.eq).toHaveBeenCalledWith('id', 'stop-a');
     expect(builder.update).toHaveBeenCalledWith({ position: 0 });
     expect(builder.update).toHaveBeenCalledWith({ position: 1 });
   });
