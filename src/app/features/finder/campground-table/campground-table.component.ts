@@ -1,14 +1,16 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
+import { InputTextModule } from 'primeng/inputtext';
 import { FavoriteToggleComponent } from '../../../shared/favorite-toggle/favorite-toggle.component';
 import { Campground } from '../../../core/models/campground.model';
 
 @Component({
   selector: 'app-campground-table',
   standalone: true,
-  imports: [TableModule, DecimalPipe, RouterLink, FavoriteToggleComponent],
+  imports: [TableModule, DecimalPipe, FormsModule, RouterLink, InputTextModule, FavoriteToggleComponent],
   template: `
     <p-table
       [value]="campgrounds"
@@ -25,6 +27,9 @@ import { Campground } from '../../../core/models/campground.model';
           @if (showDistance) {
             <th pSortableColumn="distanceMeters">Distance <p-sort-icon field="distanceMeters" /></th>
           }
+          @if (showNotes) {
+            <th>Note</th>
+          }
           <th></th>
         </tr>
       </ng-template>
@@ -35,19 +40,47 @@ import { Campground } from '../../../core/models/campground.model';
           @if (showDistance) {
             <td>{{ campground.distanceMeters / 1609.34 | number: '1.1-1' }} mi</td>
           }
+          @if (showNotes) {
+            <td>
+              <input
+                pInputText
+                [(ngModel)]="noteDrafts[campground.id]"
+                (blur)="onNoteBlur(campground.id)"
+              />
+            </td>
+          }
           <td><app-favorite-toggle [campgroundId]="campground.id" /></td>
         </tr>
       </ng-template>
     </p-table>
   `,
 })
-export class CampgroundTableComponent {
+export class CampgroundTableComponent implements OnChanges {
   @Input({ required: true }) campgrounds: Campground[] = [];
   @Input() selected: Campground | null = null;
   @Input() showDistance = true;
+  @Input() showNotes = false;
+  @Input() notes: Map<string, string | null> = new Map();
   @Output() selectedChange = new EventEmitter<Campground | null>();
+  @Output() noteChange = new EventEmitter<{ campgroundId: string; note: string }>();
+
+  noteDrafts: Record<string, string> = {};
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['notes']) {
+      const drafts: Record<string, string> = {};
+      this.notes.forEach((note, campgroundId) => {
+        drafts[campgroundId] = note ?? '';
+      });
+      this.noteDrafts = drafts;
+    }
+  }
 
   onSelectionChange(campground: Campground): void {
     this.selectedChange.emit(campground);
+  }
+
+  onNoteBlur(campgroundId: string): void {
+    this.noteChange.emit({ campgroundId, note: this.noteDrafts[campgroundId] ?? '' });
   }
 }
