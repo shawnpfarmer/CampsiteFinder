@@ -37,6 +37,7 @@ L.Icon.Default.mergeOptions({
 export class CampgroundMapComponent implements OnChanges {
   @Input({ required: true }) campgrounds: Campground[] = [];
   @Input() selectedId: string | null = null;
+  @Input() ordered = false;
 
   private map: L.Map | undefined;
 
@@ -57,8 +58,18 @@ export class CampgroundMapComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['campgrounds']) {
-      this.markerLayers = this.campgrounds.map((c) => L.marker([c.lat, c.lng]).bindPopup(c.name));
+    if (changes['campgrounds'] || changes['ordered']) {
+      const markers = this.campgrounds.map((c, index) =>
+        L.marker([c.lat, c.lng], this.ordered ? { icon: this.numberedIcon(index + 1) } : {}).bindPopup(
+          c.name,
+        ),
+      );
+      if (this.ordered && this.campgrounds.length > 1) {
+        const route = L.polyline(this.campgrounds.map((c) => [c.lat, c.lng] as L.LatLngTuple));
+        this.markerLayers = [...markers, route];
+      } else {
+        this.markerLayers = markers;
+      }
     }
     if (changes['selectedId'] && this.selectedId && this.map) {
       const selected = this.campgrounds.find((c) => c.id === this.selectedId);
@@ -66,5 +77,13 @@ export class CampgroundMapComponent implements OnChanges {
         this.map.setView([selected.lat, selected.lng], 12);
       }
     }
+  }
+
+  private numberedIcon(n: number): L.DivIcon {
+    return L.divIcon({
+      className: 'trip-stop-marker',
+      html: `<span>${n}</span>`,
+      iconSize: [28, 28],
+    });
   }
 }
