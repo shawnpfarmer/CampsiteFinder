@@ -66,9 +66,13 @@ export class TripDetailComponent implements OnInit {
       return;
     }
 
-    await this.favorites.loadFavoriteIds();
-    const favIds = Array.from(this.favorites.favoriteIds());
-    this.favoriteCampgrounds.set(favIds.length > 0 ? await this.campgroundsService.getByIds(favIds) : []);
+    try {
+      await this.favorites.loadFavoriteIds();
+      const favIds = Array.from(this.favorites.favoriteIds());
+      this.favoriteCampgrounds.set(favIds.length > 0 ? await this.campgroundsService.getByIds(favIds) : []);
+    } catch {
+      this.favoriteCampgrounds.set([]);
+    }
   }
 
   startRename(): void {
@@ -106,11 +110,13 @@ export class TripDetailComponent implements OnInit {
     if (event.dragIndex == null || event.dropIndex == null) {
       return;
     }
+    // PrimeNG's Table.onRowDrop already reorders the bound array in place
+    // (splices the moved row into its new position) before emitting this
+    // event — this.stops() already reflects the new order. Just republish
+    // a fresh array reference so the signal notifies downstream consumers,
+    // then persist the order that's already there.
     const reordered = [...this.stops()];
-    const [moved] = reordered.splice(event.dragIndex, 1);
-    reordered.splice(event.dropIndex, 0, moved);
     this.stops.set(reordered);
-
     await this.tripsService.reorderStops(
       this.tripId,
       reordered.map((s) => s.stopId),

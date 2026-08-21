@@ -104,6 +104,12 @@ describe('TripDetailComponent', () => {
     });
     await component.ngOnInit();
 
+    // Simulate PrimeNG's Table.onRowDrop, which mutates the bound array
+    // in place (via its own reorderArray splice) before emitting onRowReorder.
+    const stopsArray = component.stops();
+    const [moved] = stopsArray.splice(0, 1);
+    stopsArray.splice(1, 0, moved);
+
     await component.onRowReorder({ dragIndex: 0, dropIndex: 1 });
 
     expect(component.stops().map((s: any) => s.stopId)).toEqual(['stop-b', 'stop-a']);
