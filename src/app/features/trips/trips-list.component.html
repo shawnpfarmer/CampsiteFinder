@@ -1,0 +1,20 @@
+@if (allTrips().length === 0) {
+  <p>No trips yet. Select some favorites on the <a routerLink="/favorites">Favorites</a> page and choose "Plan a trip" to create one.</p>
+} @else {
+  <p-table [value]="allTrips()">
+    <ng-template #header>
+      <tr>
+        <th>Name</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-trip>
+      <tr>
+        <td><a [routerLink]="['/trips', trip.id]">{{ trip.name }}</a></td>
+        <td>{{ trip.createdAt | date }}</td>
+        <td><button pButton [text]="true" (click)="onDelete(trip.id)">Delete</button></td>
+      </tr>
+    </ng-template>
+  </p-table>
+}

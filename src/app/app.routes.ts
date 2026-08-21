@@ -20,6 +20,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/signup.component').then((m) => m.SignupComponent),
   },
   {
+    path: 'trips',
+    loadComponent: () => import('./features/trips/trips-list.component').then((m) => m.TripsListComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'campground/:id',
     loadComponent: () =>
       import('./features/campground-detail/campground-detail.component').then(
