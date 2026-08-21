@@ -158,4 +158,82 @@ describe('TripDetailComponent', () => {
     expect(deleteTrip).toHaveBeenCalledWith('trip-1');
     expect(navigateByUrl).toHaveBeenCalledWith('/trips');
   });
+
+  it('surfaces an error when renaming fails and stays in edit mode', async () => {
+    const component = configure({ renameTrip: vi.fn().mockRejectedValue(new Error('boom')) });
+    await component.ngOnInit();
+
+    component.startRename();
+    component.nameDraft = 'New Name';
+    await component.saveRename();
+
+    expect(component.error()).toBe("Couldn't rename this trip — try again.");
+    expect(component.trip()?.name).toBe('Maine Coast');
+    expect(component.editingName()).toBe(true);
+  });
+
+  it('surfaces an error when deleting fails and does not navigate away', async () => {
+    const navigateByUrl = vi.fn();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const component = configure({
+      deleteTrip: vi.fn().mockRejectedValue(new Error('boom')),
+      navigateByUrl,
+    });
+    await component.ngOnInit();
+
+    await component.onDeleteTrip();
+
+    expect(component.error()).toBe("Couldn't delete this trip — try again.");
+    expect(navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it('surfaces an error when adding a stop fails', async () => {
+    const component = configure({ addStop: vi.fn().mockRejectedValue(new Error('boom')) });
+    await component.ngOnInit();
+
+    component.addStopCampgroundId = 'cg-2';
+    await component.onAddStop();
+
+    expect(component.error()).toBe("Couldn't add that stop — try again.");
+  });
+
+  it('surfaces an error when removing a stop fails and keeps the stop listed', async () => {
+    const component = configure({
+      getTripStops: vi.fn().mockResolvedValue([
+        { stopId: 'stop-a', campground: { id: 'cg-1', name: 'A' } },
+      ]),
+      removeStop: vi.fn().mockRejectedValue(new Error('boom')),
+    });
+    await component.ngOnInit();
+
+    await component.onRemoveStop('stop-a');
+
+    expect(component.error()).toBe("Couldn't remove that stop — try again.");
+    expect(component.stops().length).toBe(1);
+  });
+
+  it('surfaces an error and resyncs from the server when reordering fails', async () => {
+    const serverOrder = [
+      { stopId: 'stop-a', campground: { id: 'cg-1', name: 'A' } },
+      { stopId: 'stop-b', campground: { id: 'cg-2', name: 'B' } },
+    ];
+    // Fresh copy per call — the test mutates the returned array the way
+    // PrimeNG's in-place row splice does.
+    const getTripStops = vi.fn().mockImplementation(() => Promise.resolve([...serverOrder]));
+    const component = configure({
+      getTripStops,
+      reorderStops: vi.fn().mockRejectedValue(new Error('boom')),
+    });
+    await component.ngOnInit();
+
+    // PrimeNG has already spliced the bound array into the new on-screen order.
+    const stopsArray = component.stops();
+    const [moved] = stopsArray.splice(0, 1);
+    stopsArray.splice(1, 0, moved);
+
+    await component.onRowReorder({ dragIndex: 0, dropIndex: 1 });
+
+    expect(component.error()).toBe("Couldn't reorder stops — try again.");
+    expect(component.stops().map((s: any) => s.stopId)).toEqual(['stop-a', 'stop-b']);
+  });
 });

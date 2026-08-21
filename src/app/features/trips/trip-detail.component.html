@@ -11,6 +11,10 @@
     }
     <button pButton [text]="true" (click)="onDeleteTrip()">Delete trip</button>
 
+    @if (error()) {
+      <p-message severity="warn">{{ error() }}</p-message>
+    }
+
     <app-campground-map [campgrounds]="stopCampgrounds()" [ordered]="true" [selectedId]="null" />
 
     <p-table [value]="stops()" (onRowReorder)="onRowReorder($event)">

@@ -54,8 +54,8 @@ describe('FavoritesComponent', () => {
     expect(component.campgrounds()).toEqual([]);
   });
 
-  it('delegates note edits to FavoritesService.updateNote', () => {
-    const updateNoteSpy = vi.fn();
+  it('delegates note edits to FavoritesService.updateNote', async () => {
+    const updateNoteSpy = vi.fn().mockResolvedValue(undefined);
     TestBed.configureTestingModule({
       imports: [FavoritesComponent],
       providers: [
@@ -68,9 +68,29 @@ describe('FavoritesComponent', () => {
 
     const component = TestBed.createComponent(FavoritesComponent).componentInstance;
 
-    component.onNoteChange({ campgroundId: 'cg-1', note: 'book early' });
+    await component.onNoteChange({ campgroundId: 'cg-1', note: 'book early' });
 
     expect(updateNoteSpy).toHaveBeenCalledWith('cg-1', 'book early');
+    expect(component.noteError()).toBeNull();
+  });
+
+  it('surfaces an error when saving a note fails', async () => {
+    const updateNoteSpy = vi.fn().mockRejectedValue(new Error('boom'));
+    TestBed.configureTestingModule({
+      imports: [FavoritesComponent],
+      providers: [
+        { provide: FavoritesService, useValue: { updateNote: updateNoteSpy } },
+        { provide: CampgroundsService, useValue: { getByIds: vi.fn() } },
+        { provide: TripsService, useValue: {} },
+        { provide: Router, useValue: {} },
+      ],
+    });
+
+    const component = TestBed.createComponent(FavoritesComponent).componentInstance;
+
+    await component.onNoteChange({ campgroundId: 'cg-1', note: 'book early' });
+
+    expect(component.noteError()).toBe("Couldn't save that note — try again.");
   });
 
   it('only allows saving a trip once a name and at least one selection are present', () => {
@@ -117,5 +137,29 @@ describe('FavoritesComponent', () => {
 
     expect(createTripSpy).toHaveBeenCalledWith('Maine Coast', ['cg-1', 'cg-2']);
     expect(navigateSpy).toHaveBeenCalledWith('/trips/trip-9');
+    expect(component.tripError()).toBeNull();
+  });
+
+  it('surfaces an error and does not navigate when saving a trip fails', async () => {
+    const createTripSpy = vi.fn().mockRejectedValue(new Error('boom'));
+    const navigateSpy = vi.fn();
+    TestBed.configureTestingModule({
+      imports: [FavoritesComponent],
+      providers: [
+        { provide: FavoritesService, useValue: { updateNote: vi.fn() } },
+        { provide: CampgroundsService, useValue: { getByIds: vi.fn() } },
+        { provide: TripsService, useValue: { createTrip: createTripSpy } },
+        { provide: Router, useValue: { navigateByUrl: navigateSpy } },
+      ],
+    });
+
+    const component = TestBed.createComponent(FavoritesComponent).componentInstance;
+    component.tripName = 'Maine Coast';
+    component.toggleSelectedForTrip('cg-1');
+
+    await component.saveTrip();
+
+    expect(component.tripError()).toBe("Couldn't save this trip — try again.");
+    expect(navigateSpy).not.toHaveBeenCalled();
   });
 });

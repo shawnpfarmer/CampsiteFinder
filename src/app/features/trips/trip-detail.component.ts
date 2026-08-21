@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import type { TableRowReorderEvent } from 'primeng/types/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { CampgroundMapComponent } from '../finder/campground-map/campground-map.component';
 import { TripsService } from '../../core/services/trips.service';
 import { FavoritesService } from '../../core/services/favorites.service';
@@ -15,7 +16,7 @@ import { Campground } from '../../core/models/campground.model';
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [TableModule, ButtonModule, InputTextModule, FormsModule, CampgroundMapComponent],
+  imports: [TableModule, ButtonModule, InputTextModule, MessageModule, FormsModule, CampgroundMapComponent],
   templateUrl: './trip-detail.component.html',
 })
 export class TripDetailComponent implements OnInit {
@@ -30,6 +31,7 @@ export class TripDetailComponent implements OnInit {
   readonly trip = signal<Trip | null>(null);
   readonly stops = signal<TripStop[]>([]);
   readonly notFound = signal(false);
+  readonly error = signal<string | null>(null);
   readonly editingName = signal(false);
   readonly favoriteCampgrounds = signal<Campground[]>([]);
 
@@ -83,33 +85,53 @@ export class TripDetailComponent implements OnInit {
   async saveRename(): Promise<void> {
     const name = this.nameDraft.trim();
     if (!name) return;
-    await this.tripsService.renameTrip(this.tripId, name);
+    this.error.set(null);
+    try {
+      await this.tripsService.renameTrip(this.tripId, name);
+    } catch {
+      this.error.set("Couldn't rename this trip — try again.");
+      return;
+    }
     this.trip.update((t) => (t ? { ...t, name } : t));
     this.editingName.set(false);
   }
 
   async onDeleteTrip(): Promise<void> {
     if (!window.confirm('Delete this trip? This cannot be undone.')) return;
-    await this.tripsService.deleteTrip(this.tripId);
+    this.error.set(null);
+    try {
+      await this.tripsService.deleteTrip(this.tripId);
+    } catch {
+      this.error.set("Couldn't delete this trip — try again.");
+      return;
+    }
     this.router.navigateByUrl('/trips');
   }
 
   async onAddStop(): Promise<void> {
     if (!this.addStopCampgroundId) return;
-    await this.tripsService.addStop(this.tripId, this.addStopCampgroundId);
-    this.addStopCampgroundId = '';
-    this.stops.set(await this.tripsService.getTripStops(this.tripId));
+    this.error.set(null);
+    try {
+      await this.tripsService.addStop(this.tripId, this.addStopCampgroundId);
+      this.addStopCampgroundId = '';
+      this.stops.set(await this.tripsService.getTripStops(this.tripId));
+    } catch {
+      this.error.set("Couldn't add that stop — try again.");
+    }
   }
 
   async onRemoveStop(stopId: string): Promise<void> {
-    await this.tripsService.removeStop(this.tripId, stopId);
+    this.error.set(null);
+    try {
+      await this.tripsService.removeStop(this.tripId, stopId);
+    } catch {
+      this.error.set("Couldn't remove that stop — try again.");
+      return;
+    }
     this.stops.update((stops) => stops.filter((s) => s.stopId !== stopId));
   }
 
   async onRowReorder(event: TableRowReorderEvent): Promise<void> {
-    if (event.dragIndex == null || event.dropIndex == null) {
-      return;
-    }
     // PrimeNG's Table.onRowDrop already reorders the bound array in place
     // (splices the moved row into its new position) before emitting this
     // event — this.stops() already reflects the new order. Just republish
@@ -117,9 +139,23 @@ export class TripDetailComponent implements OnInit {
     // then persist the order that's already there.
     const reordered = [...this.stops()];
     this.stops.set(reordered);
-    await this.tripsService.reorderStops(
-      this.tripId,
-      reordered.map((s) => s.stopId),
-    );
+    this.error.set(null);
+    try {
+      await this.tripsService.reorderStops(
+        this.tripId,
+        reordered.map((s) => s.stopId),
+      );
+    } catch {
+      this.error.set("Couldn't reorder stops — try again.");
+      // The on-screen order came from PrimeNG's in-place splice, so it no
+      // longer matches the database (and reorderStops may have persisted
+      // some positions before failing). Re-read the stops so what's shown is
+      // what's stored; if that read fails too, leave the error message up.
+      try {
+        this.stops.set(await this.tripsService.getTripStops(this.tripId));
+      } catch {
+        /* keep the reorder error message */
+      }
+    }
   }
 }

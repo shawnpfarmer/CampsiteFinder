@@ -68,11 +68,17 @@ export class CampgroundTableComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['notes']) {
-      const drafts: Record<string, string> = {};
+      // Merge, never replace. Saving one row's note updates the shared notes
+      // map, which pushes a new `notes` input through here — rebuilding the
+      // whole draft object would wipe whatever the user is mid-typing in
+      // another row. A key already present in `noteDrafts` is either being
+      // edited right now or already reflects what the user typed, so only
+      // seed keys we haven't got yet.
       this.notes.forEach((note, campgroundId) => {
-        drafts[campgroundId] = note ?? '';
+        if (!(campgroundId in this.noteDrafts)) {
+          this.noteDrafts[campgroundId] = note ?? '';
+        }
       });
-      this.noteDrafts = drafts;
     }
   }
 

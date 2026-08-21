@@ -70,6 +70,19 @@ export class CampgroundMapComponent implements OnChanges {
       } else {
         this.markerLayers = markers;
       }
+      // In ordered (trip route) mode nothing else ever moves the viewport —
+      // `selectedId` is always null there — so without this the map sits on
+      // its constructional default (the middle of the continental US) while
+      // the route renders off-screen. `this.map` may not exist yet on the
+      // first ngOnChanges (leafletMapReady fires later); skipping the fit in
+      // that case matches how the selectedId branch below guards the same
+      // timing gap, and the next campgrounds change will fit it.
+      if (this.ordered && this.campgrounds.length > 0 && this.map) {
+        this.map.fitBounds(
+          L.latLngBounds(this.campgrounds.map((c) => [c.lat, c.lng] as L.LatLngTuple)),
+          { padding: [32, 32] },
+        );
+      }
     }
     if (changes['selectedId'] && this.selectedId && this.map) {
       const selected = this.campgrounds.find((c) => c.id === this.selectedId);

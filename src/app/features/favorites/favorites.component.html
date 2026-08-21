@@ -1,3 +1,7 @@
+@if (noteError()) {
+  <p-message severity="warn">{{ noteError() }}</p-message>
+}
+
 <div class="finder-layout">
   <app-campground-map [campgrounds]="campgrounds()" [selectedId]="selected()?.id ?? null" />
   <app-campground-table
@@ -38,5 +42,8 @@
       }
     </ul>
     <button pButton [disabled]="!canSaveTrip" (click)="saveTrip()">Save Trip</button>
+    @if (tripError()) {
+      <p-message severity="warn">{{ tripError() }}</p-message>
+    }
   </div>
 }

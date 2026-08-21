@@ -57,6 +57,16 @@ describe('FavoritesService', () => {
     expect(service.favoriteIds().has('cg-2')).toBe(true);
   });
 
+  it('seeds a null note when a campground is newly favorited', async () => {
+    service.favoriteNotes.set(new Map([['cg-2', 'a stale note from a previous favorite']]));
+    fromSpy.mockReturnValue(createSupabaseTableMock({ data: null, error: null }));
+
+    await service.toggleFavorite('cg-2');
+
+    expect(service.favoriteNotes().has('cg-2')).toBe(true);
+    expect(service.favoriteNotes().get('cg-2')).toBeNull();
+  });
+
   it('removes a campground from favorites when already favorited', async () => {
     service.favoriteIds.set(new Set(['cg-3']));
     fromSpy.mockReturnValue(createSupabaseTableMock({ data: null, error: null }));
@@ -66,11 +76,34 @@ describe('FavoritesService', () => {
     expect(service.favoriteIds().has('cg-3')).toBe(false);
   });
 
-  it('updates a favorite note and stores it locally', async () => {
+  it('clears the local note when a campground is un-favorited', async () => {
+    service.favoriteIds.set(new Set(['cg-3']));
+    service.favoriteNotes.set(new Map([['cg-3', 'book early'], ['cg-4', 'keep me']]));
     fromSpy.mockReturnValue(createSupabaseTableMock({ data: null, error: null }));
+
+    await service.toggleFavorite('cg-3');
+
+    expect(service.favoriteNotes().has('cg-3')).toBe(false);
+    expect(service.favoriteNotes().get('cg-4')).toBe('keep me');
+  });
+
+  it('updates a favorite note and stores it locally', async () => {
+    fromSpy.mockReturnValue(
+      createSupabaseTableMock({ data: [{ campground_id: 'cg-1' }], error: null }),
+    );
 
     await service.updateNote('cg-1', 'book early');
 
     expect(service.favoriteNotes().get('cg-1')).toBe('book early');
+  });
+
+  it('throws and leaves the local note map alone when the update matches no rows', async () => {
+    service.favoriteNotes.set(new Map([['cg-1', 'original']]));
+    fromSpy.mockReturnValue(createSupabaseTableMock({ data: [], error: null }));
+
+    await expect(service.updateNote('cg-1', 'book early')).rejects.toThrow(
+      'No matching favorite to update',
+    );
+    expect(service.favoriteNotes().get('cg-1')).toBe('original');
   });
 });

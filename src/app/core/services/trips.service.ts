@@ -28,11 +28,13 @@ export class TripsService {
   }
 
   async getTrip(tripId: string): Promise<Trip | null> {
-    const { data, error } = await this.supabase.client
-      .from('trips')
-      .select('id, name, created_at')
-      .eq('id', tripId)
-      .maybeSingle();
+    const userId = this.supabase.session()?.user.id;
+    // RLS already restricts this to the signed-in user's trips; scoping by
+    // user_id explicitly is defense-in-depth and keeps this consistent with
+    // loadTrips and every other per-user query in this app.
+    let query = this.supabase.client.from('trips').select('id, name, created_at').eq('id', tripId);
+    if (userId) query = query.eq('user_id', userId);
+    const { data, error } = await query.maybeSingle();
     if (error) throw error;
     if (!data) return null;
     return { id: data.id, name: data.name, createdAt: data.created_at };
@@ -87,14 +89,28 @@ export class TripsService {
   }
 
   async renameTrip(tripId: string, name: string): Promise<void> {
-    const { error } = await this.supabase.client.from('trips').update({ name }).eq('id', tripId);
+    // `.select()` returns the affected rows. A write RLS filters out (or that
+    // matches a stale id) comes back as `{ error: null }` with zero rows —
+    // without this check the local signal would show a rename that never
+    // actually happened, and revert on the next reload.
+    const { data, error } = await this.supabase.client
+      .from('trips')
+      .update({ name })
+      .eq('id', tripId)
+      .select('id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new Error('No matching trip to rename');
     this.trips.update((trips) => trips.map((t) => (t.id === tripId ? { ...t, name } : t)));
   }
 
   async deleteTrip(tripId: string): Promise<void> {
-    const { error } = await this.supabase.client.from('trips').delete().eq('id', tripId);
+    const { data, error } = await this.supabase.client
+      .from('trips')
+      .delete()
+      .eq('id', tripId)
+      .select('id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new Error('No matching trip to delete');
     this.trips.update((trips) => trips.filter((t) => t.id !== tripId));
   }
 

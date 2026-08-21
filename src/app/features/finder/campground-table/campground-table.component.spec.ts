@@ -63,6 +63,33 @@ describe('CampgroundTableComponent', () => {
     expect(component.noteDrafts['cg-1']).toBe('great sites');
   });
 
+  it('seeds a note for a campground it has not seen before on a later notes change', () => {
+    component.notes = new Map([['cg-1', 'great sites']]);
+    component.ngOnChanges({ notes: {} as any });
+
+    component.notes = new Map([
+      ['cg-1', 'great sites'],
+      ['cg-2', 'quiet loop'],
+    ]);
+    component.ngOnChanges({ notes: {} as any });
+
+    expect(component.noteDrafts['cg-2']).toBe('quiet loop');
+  });
+
+  it('does not overwrite a draft the user has already started editing', () => {
+    component.notes = new Map([['cg-1', 'great sites']]);
+    component.ngOnChanges({ notes: {} as any });
+
+    // User types in row cg-1 while another row's save round-trip is in flight.
+    component.noteDrafts['cg-1'] = 'half-typed edit';
+
+    // That other save resolves and pushes a fresh notes map through.
+    component.notes = new Map([['cg-1', 'great sites']]);
+    component.ngOnChanges({ notes: {} as any });
+
+    expect(component.noteDrafts['cg-1']).toBe('half-typed edit');
+  });
+
   it('emits noteChange with the current draft value on blur', () => {
     let emitted: any;
     component.noteChange.subscribe((e) => (emitted = e));

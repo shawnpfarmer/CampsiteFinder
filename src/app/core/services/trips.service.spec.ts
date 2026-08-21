@@ -100,22 +100,53 @@ describe('TripsService', () => {
     ]);
   });
 
+  it('scopes getTrip to the signed-in user as well as the trip id', async () => {
+    const builder = createQueryBuilderMock({
+      data: { id: 'trip-1', name: 'Maine Coast', created_at: '2026-08-01T00:00:00Z' },
+      error: null,
+    });
+    fromSpy.mockReturnValue(builder);
+
+    await service.getTrip('trip-1');
+
+    expect(builder.eq).toHaveBeenCalledWith('id', 'trip-1');
+    expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
   it('renames a trip', async () => {
     service.trips.set([{ id: 'trip-1', name: 'Old Name', createdAt: '2026-08-01T00:00:00Z' }]);
-    fromSpy.mockReturnValue(createQueryBuilderMock({ data: null, error: null }));
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: [{ id: 'trip-1' }], error: null }));
 
     await service.renameTrip('trip-1', 'New Name');
 
     expect(service.trips()[0].name).toBe('New Name');
   });
 
+  it('throws and leaves trips untouched when a rename matches no rows', async () => {
+    service.trips.set([{ id: 'trip-1', name: 'Old Name', createdAt: '2026-08-01T00:00:00Z' }]);
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: [], error: null }));
+
+    await expect(service.renameTrip('trip-1', 'New Name')).rejects.toThrow(
+      'No matching trip to rename',
+    );
+    expect(service.trips()[0].name).toBe('Old Name');
+  });
+
   it('deletes a trip', async () => {
     service.trips.set([{ id: 'trip-1', name: 'Maine Coast', createdAt: '2026-08-01T00:00:00Z' }]);
-    fromSpy.mockReturnValue(createQueryBuilderMock({ data: null, error: null }));
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: [{ id: 'trip-1' }], error: null }));
 
     await service.deleteTrip('trip-1');
 
     expect(service.trips()).toEqual([]);
+  });
+
+  it('throws and leaves trips untouched when a delete matches no rows', async () => {
+    service.trips.set([{ id: 'trip-1', name: 'Maine Coast', createdAt: '2026-08-01T00:00:00Z' }]);
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: [], error: null }));
+
+    await expect(service.deleteTrip('trip-1')).rejects.toThrow('No matching trip to delete');
+    expect(service.trips().length).toBe(1);
   });
 
   it('adds a stop at the next position', async () => {
