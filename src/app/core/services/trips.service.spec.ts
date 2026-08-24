@@ -199,6 +199,25 @@ describe('TripsService', () => {
     expect(builder.update).toHaveBeenCalledWith({ position: 1 });
   });
 
+  it('returns the set of trip ids containing a campground', async () => {
+    fromSpy.mockReturnValue(
+      createQueryBuilderMock({
+        data: [{ trip_id: 'trip-1' }, { trip_id: 'trip-2' }],
+        error: null,
+      }),
+    );
+
+    const tripIds = await service.getTripIdsForCampground('cg-1');
+
+    expect(tripIds).toEqual(new Set(['trip-1', 'trip-2']));
+  });
+
+  it('throws when getTripIdsForCampground query errors', async () => {
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: null, error: new Error('boom') }));
+
+    await expect(service.getTripIdsForCampground('cg-1')).rejects.toThrow();
+  });
+
   it('throws when a query errors', async () => {
     fromSpy.mockReturnValue(createQueryBuilderMock({ data: null, error: new Error('boom') }));
 

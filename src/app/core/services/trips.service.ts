@@ -139,6 +139,17 @@ export class TripsService {
     if (error) throw error;
   }
 
+  async getTripIdsForCampground(campgroundId: string): Promise<Set<string>> {
+    // RLS on trip_stops already restricts rows to trips the signed-in user
+    // owns, so no explicit user/trip join is needed here.
+    const { data, error } = await this.supabase.client
+      .from('trip_stops')
+      .select('trip_id')
+      .eq('campground_id', campgroundId);
+    if (error) throw error;
+    return new Set((data ?? []).map((row: any) => row.trip_id));
+  }
+
   async reorderStops(tripId: string, orderedStopIds: string[]): Promise<void> {
     for (let i = 0; i < orderedStopIds.length; i++) {
       const { error } = await this.supabase.client

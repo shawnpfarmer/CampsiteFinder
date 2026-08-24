@@ -1,7 +1,9 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import * as L from 'leaflet';
 import { Campground } from '../../../core/models/campground.model';
+import { TripsService } from '../../../core/services/trips.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 // Leaflet's Icon.Default always prepends an auto-detected `imagePath`
 // directory to its icon filenames — it reads the computed background-image
@@ -39,6 +41,9 @@ export class CampgroundMapComponent implements OnChanges {
   @Input() selectedId: string | null = null;
   @Input() ordered = false;
 
+  private readonly tripsService = inject(TripsService);
+  private readonly supabase = inject(SupabaseService);
+
   private map: L.Map | undefined;
 
   readonly mapOptions: L.MapOptions = {
@@ -61,7 +66,7 @@ export class CampgroundMapComponent implements OnChanges {
     if (changes['campgrounds'] || changes['ordered']) {
       const markers = this.campgrounds.map((c, index) =>
         L.marker([c.lat, c.lng], this.ordered ? { icon: this.numberedIcon(index + 1) } : {}).bindPopup(
-          c.name,
+          this.buildPopupContent(c),
         ),
       );
       if (this.ordered && this.campgrounds.length > 1) {
@@ -90,6 +95,37 @@ export class CampgroundMapComponent implements OnChanges {
         this.map.setView([selected.lat, selected.lng], 12);
       }
     }
+  }
+
+  // A plain DOM popup, not the AddToTripComponent used elsewhere — Leaflet
+  // popups aren't part of Angular's view tree, so projecting a real Angular
+  // component in here would require manually managing its lifecycle
+  // (createComponent/destroy) on every marker rebuild. This trades the
+  // trip-picker UI for a one-click add to the most recently created trip.
+  private buildPopupContent(campground: Campground): HTMLElement {
+    const container = document.createElement('div');
+    const name = document.createElement('div');
+    name.textContent = campground.name;
+    container.appendChild(name);
+
+    const trips = this.tripsService.trips();
+    if (this.supabase.isAuthenticated && trips.length > 0) {
+      const mostRecentTrip = trips[0];
+      const button = document.createElement('button');
+      button.textContent = 'Add to Trip';
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          await this.tripsService.addStop(mostRecentTrip.id, campground.id);
+          button.textContent = 'Added ✓';
+        } catch {
+          button.textContent = 'Add to Trip';
+          button.disabled = false;
+        }
+      });
+      container.appendChild(button);
+    }
+    return container;
   }
 
   private numberedIcon(n: number): L.DivIcon {

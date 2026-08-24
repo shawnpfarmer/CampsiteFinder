@@ -2,12 +2,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CampgroundsService } from '../../core/services/campgrounds.service';
 import { FavoriteToggleComponent } from '../../shared/favorite-toggle/favorite-toggle.component';
+import { AddToTripComponent } from '../../shared/add-to-trip/add-to-trip.component';
 import { Campground } from '../../core/models/campground.model';
 
 @Component({
   selector: 'app-campground-detail',
   standalone: true,
-  imports: [FavoriteToggleComponent],
+  imports: [FavoriteToggleComponent, AddToTripComponent],
   templateUrl: './campground-detail.component.html',
 })
 export class CampgroundDetailComponent implements OnInit {

@@ -1,14 +1,54 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 import { CampgroundTableComponent } from './campground-table.component';
+import { AddToTripComponent } from '../../../shared/add-to-trip/add-to-trip.component';
+import { FavoritesService } from '../../../core/services/favorites.service';
+import { TripsService } from '../../../core/services/trips.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 describe('CampgroundTableComponent', () => {
   let fixture: ComponentFixture<CampgroundTableComponent>;
   let component: CampgroundTableComponent;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [CampgroundTableComponent] });
+    TestBed.configureTestingModule({
+      imports: [CampgroundTableComponent],
+      providers: [
+        provideRouter([]),
+        { provide: SupabaseService, useValue: { isAuthenticated: true } },
+        {
+          provide: FavoritesService,
+          useValue: {
+            favoriteIds: () => new Set(),
+            toggleFavorite: vi.fn(),
+            loadFavoriteIds: () => Promise.resolve(),
+          },
+        },
+        {
+          provide: TripsService,
+          useValue: {
+            trips: () => [],
+            loadTrips: vi.fn().mockResolvedValue(undefined),
+            getTripIdsForCampground: vi.fn().mockResolvedValue(new Set()),
+            addStop: vi.fn(),
+            createTrip: vi.fn(),
+          },
+        },
+      ],
+    });
     fixture = TestBed.createComponent(CampgroundTableComponent);
     component = fixture.componentInstance;
+  });
+
+  it('renders an Add to Trip control for each row', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any];
+    fixture.detectChanges();
+
+    const addToTrip = fixture.debugElement.query(By.directive(AddToTripComponent));
+    expect(addToTrip).toBeTruthy();
+    expect(addToTrip.componentInstance.campgroundId).toBe('1');
   });
 
   it('emits selectedChange when a row is selected', () => {

@@ -5,12 +5,21 @@ import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { FavoriteToggleComponent } from '../../../shared/favorite-toggle/favorite-toggle.component';
+import { AddToTripComponent } from '../../../shared/add-to-trip/add-to-trip.component';
 import { Campground } from '../../../core/models/campground.model';
 
 @Component({
   selector: 'app-campground-table',
   standalone: true,
-  imports: [TableModule, DecimalPipe, FormsModule, RouterLink, InputTextModule, FavoriteToggleComponent],
+  imports: [
+    TableModule,
+    DecimalPipe,
+    FormsModule,
+    RouterLink,
+    InputTextModule,
+    FavoriteToggleComponent,
+    AddToTripComponent,
+  ],
   template: `
     <p-table
       [value]="campgrounds"
@@ -49,7 +58,10 @@ import { Campground } from '../../../core/models/campground.model';
               />
             </td>
           }
-          <td><app-favorite-toggle [campgroundId]="campground.id" /></td>
+          <td>
+            <app-favorite-toggle [campgroundId]="campground.id" />
+            <app-add-to-trip [campgroundId]="campground.id" />
+          </td>
         </tr>
       </ng-template>
     </p-table>

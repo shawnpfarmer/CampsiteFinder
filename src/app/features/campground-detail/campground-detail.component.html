@@ -2,6 +2,7 @@
   <article class="campground-detail">
     <h1>{{ c.name }}</h1>
     <app-favorite-toggle [campgroundId]="c.id" />
+    <app-add-to-trip [campgroundId]="c.id" />
     <p>{{ c.description }}</p>
     <a [href]="c.reservationUrl" target="_blank" rel="noopener">Reserve on recreation.gov</a>
     <a [href]="c.directionsUrl" target="_blank" rel="noopener">Directions</a>
