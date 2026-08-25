@@ -25,6 +25,9 @@ export class UserService {
       theme: data.theme,
       role: data.role,
     });
+    if (data.theme) {
+      document.documentElement.dataset['theme'] = data.theme;
+    }
   }
 
   async updateDisplayName(displayName: string): Promise<void> {

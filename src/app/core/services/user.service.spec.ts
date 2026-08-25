@@ -21,6 +21,9 @@ describe('UserService', () => {
   let invokeSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    // Clean up DOM state to prevent test leakage
+    delete document.documentElement.dataset['theme'];
+
     fromSpy = vi.fn();
     updateUserSpy = vi.fn().mockResolvedValue({ error: null });
     signOutSpy = vi.fn().mockResolvedValue({ error: null });
@@ -109,5 +112,31 @@ describe('UserService', () => {
 
     await expect(service.deleteAccount()).rejects.toThrow('boom');
     expect(signOutSpy).not.toHaveBeenCalled();
+  });
+
+  it('applies persisted theme to DOM when loading profile with non-null theme', async () => {
+    fromSpy.mockReturnValue(
+      createQueryBuilderMock({
+        data: { id: 'user-1', display_name: 'Alex', theme: 'dark', role: 'user' },
+        error: null,
+      }),
+    );
+
+    await service.loadProfile();
+
+    expect(document.documentElement.dataset['theme']).toBe('dark');
+  });
+
+  it('does not set DOM theme attribute when loading profile with null theme', async () => {
+    fromSpy.mockReturnValue(
+      createQueryBuilderMock({
+        data: { id: 'user-1', display_name: 'Alex', theme: null, role: 'user' },
+        error: null,
+      }),
+    );
+
+    await service.loadProfile();
+
+    expect(document.documentElement.dataset['theme']).toBeUndefined();
   });
 });
