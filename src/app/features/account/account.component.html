@@ -1,0 +1,59 @@
+<h1>Account</h1>
+
+<form (ngSubmit)="onSaveDisplayName()">
+  <h2>Display name</h2>
+  <input pInputText type="text" [(ngModel)]="displayName" name="displayName" required />
+  @if (displayNameNotice()) {
+    <p-message severity="success">{{ displayNameNotice() }}</p-message>
+  }
+  @if (displayNameError()) {
+    <p-message severity="error">{{ displayNameError() }}</p-message>
+  }
+  <button pButton type="submit" [disabled]="savingDisplayName() || displayName.trim() === ''">Save Name</button>
+</form>
+
+<form (ngSubmit)="onSavePassword()">
+  <h2>Password</h2>
+  <input pInputText type="password" placeholder="New password" [(ngModel)]="newPassword" name="newPassword" />
+  <input
+    pInputText
+    type="password"
+    placeholder="Confirm password"
+    [(ngModel)]="confirmPassword"
+    name="confirmPassword"
+  />
+  @if (passwordNotice()) {
+    <p-message severity="success">{{ passwordNotice() }}</p-message>
+  }
+  @if (passwordError()) {
+    <p-message severity="error">{{ passwordError() }}</p-message>
+  }
+  <button pButton type="submit" [disabled]="savingPassword() || newPassword === ''">Update Password</button>
+</form>
+
+<div>
+  <h2>Theme</h2>
+  <label>
+    <p-toggleswitch [ngModel]="isDarkTheme()" (ngModelChange)="onThemeToggle($event)" name="theme" />
+    Dark mode
+  </label>
+  @if (themeError()) {
+    <p-message severity="error">{{ themeError() }}</p-message>
+  }
+</div>
+
+<div class="danger-zone">
+  <h2>Delete Account</h2>
+  @if (deleteError()) {
+    <p-message severity="error">{{ deleteError() }}</p-message>
+  }
+  @if (confirmingDelete()) {
+    <p>Delete your account? This cannot be undone.</p>
+    <button pButton [text]="true" (click)="onCancelDelete()">Cancel</button>
+    <button pButton severity="danger" [disabled]="deletingAccount()" (click)="onConfirmDelete()">
+      Yes, delete my account
+    </button>
+  } @else {
+    <button pButton severity="danger" (click)="onDeleteAccount()">Delete Account</button>
+  }
+</div>
