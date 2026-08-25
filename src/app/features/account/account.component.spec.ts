@@ -74,6 +74,28 @@ describe('AccountComponent', () => {
     expect(component.passwordNotice()).toBe('Password updated.');
   });
 
+  it('shows the underlying error message when saving the password fails', async () => {
+    const { component } = setup({
+      updatePassword: vi.fn().mockRejectedValue(new Error('Password should be at least 6 characters')),
+    });
+    component.newPassword = 'abc123';
+    component.confirmPassword = 'abc123';
+
+    await component.onSavePassword();
+
+    expect(component.passwordError()).toBe('Password should be at least 6 characters');
+  });
+
+  it('falls back to a generic message when the password failure has no message', async () => {
+    const { component } = setup({ updatePassword: vi.fn().mockRejectedValue('boom') });
+    component.newPassword = 'abc123';
+    component.confirmPassword = 'abc123';
+
+    await component.onSavePassword();
+
+    expect(component.passwordError()).toBe('Could not update password. Please try again.');
+  });
+
   it('toggles theme and reverts on failure', async () => {
     const { component } = setup({ updateTheme: vi.fn().mockRejectedValue(new Error('boom')) });
     await component.ngOnInit();

@@ -71,8 +71,8 @@ export class AccountComponent implements OnInit {
       this.newPassword = '';
       this.confirmPassword = '';
       this.passwordNotice.set('Password updated.');
-    } catch {
-      this.passwordError.set('Could not update password. Please try again.');
+    } catch (err) {
+      this.passwordError.set(err instanceof Error ? err.message : 'Could not update password. Please try again.');
     } finally {
       this.savingPassword.set(false);
     }
