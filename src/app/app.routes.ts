@@ -30,6 +30,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'account',
+    loadComponent: () => import('./features/account/account.component').then((m) => m.AccountComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'campground/:id',
     loadComponent: () =>
       import('./features/campground-detail/campground-detail.component').then(

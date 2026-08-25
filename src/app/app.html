@@ -3,6 +3,7 @@
   <a routerLink="/favorites">Favorites</a>
   <a routerLink="/trips">Trips</a>
   @if (supabase.isAuthenticated) {
+    <a routerLink="/account">Account</a>
     <button pButton [text]="true" (click)="onSignOut()">Sign out</button>
   } @else {
     <a routerLink="/login">Sign in</a>
