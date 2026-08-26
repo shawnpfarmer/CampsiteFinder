@@ -7,7 +7,7 @@
     @if (userService.profile()?.role === 'admin') {
       <a routerLink="/admin">Admin</a>
     }
-    <button pButton [text]="true" (click)="onSignOut()">Sign out</button>
+    <button pButton severity="secondary" class="sign-out-button" (click)="onSignOut()">Sign out</button>
   } @else {
     <a routerLink="/login">Sign in</a>
   }
