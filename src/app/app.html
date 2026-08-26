@@ -4,6 +4,9 @@
   <a routerLink="/trips">Trips</a>
   @if (supabase.isAuthenticated) {
     <a routerLink="/account">Account</a>
+    @if (userService.profile()?.role === 'admin') {
+      <a routerLink="/admin">Admin</a>
+    }
     <button pButton [text]="true" (click)="onSignOut()">Sign out</button>
   } @else {
     <a routerLink="/login">Sign in</a>

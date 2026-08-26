@@ -1,0 +1,16 @@
+<h1>Admin</h1>
+
+<p-table [value]="users()">
+  <ng-template #header>
+    <tr>
+      <th>Display Name</th>
+      <th>Role</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-user>
+    <tr>
+      <td>{{ user.displayName }}</td>
+      <td>{{ user.role }}</td>
+    </tr>
+  </ng-template>
+</p-table>

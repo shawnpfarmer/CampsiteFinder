@@ -12,7 +12,7 @@ import { UserService } from './core/services/user.service';
 })
 export class App {
   readonly supabase = inject(SupabaseService);
-  private readonly userService = inject(UserService);
+  readonly userService = inject(UserService);
 
   constructor() {
     effect(() => {

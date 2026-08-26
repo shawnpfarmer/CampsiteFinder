@@ -25,11 +25,13 @@ add/remove stops, rename, delete) as a standalone plan.
 
 ## Out of Scope (this feature, v1)
 
-- A cross-page "trip tray" for adding to a trip from anywhere
+- ~~A cross-page "trip tray" for adding to a trip from anywhere
   (Finder, detail page) — trips are built from the Favorites page only.
   Considered as an approach, rejected for v1: bigger UI surface, and
   not what was asked for. Could be a later phase if the dedicated
-  Favorites-page flow feels limiting in practice.
+  Favorites-page flow feels limiting in practice.~~ — shipped
+  2026-08-23, see [Add to Trip Everywhere Addendum](#add-to-trip-everywhere-addendum-2026-08-23)
+  below.
 - Shared/collaborative trips — a trip has exactly one owner, same
   single-user model as favorites. No viewing or editing another user's
   trip.
@@ -237,10 +239,53 @@ errors checked.
 
 ## Open Questions / Future Phases
 
-- The cross-page "trip tray" (Approach C, rejected for v1) if the
-  Favorites-only creation flow proves limiting.
+- ~~The cross-page "trip tray" (Approach C, rejected for v1) if the
+  Favorites-only creation flow proves limiting.~~ — shipped
+  2026-08-23, see addendum below.
 - Drive-time/distance-between-stops on a trip — would need a routing
   API beyond what NPS/PostGIS provide today; explicitly deferred above.
 - Collaborative/shared trips — would need a new sharing/permissions
   model beyond the current single-owner RLS pattern; explicitly
   deferred above.
+- **Paywall/entitlement gating on "Add to Trip."** Requested as the
+  motivation for shipping this everywhere now (see addendum), but
+  explicitly deferred — `addStop`/`createTrip` stay open to any
+  signed-in user until an entitlements model exists.
+
+## Add to Trip Everywhere Addendum (2026-08-23)
+
+Extends the "Plan a trip" flow (Favorites-only, batch creation) with a
+per-campground "Add to Trip" action available everywhere a campground
+is shown, so a stop can be added to an existing trip (or a
+newly-named one) without visiting the Favorites page first. Requested
+as groundwork for a future paid tier — no entitlement/paywall logic
+shipped with this; every signed-in user can use it for now.
+
+- **`TripsService.getTripIdsForCampground(campgroundId)`** — new
+  method; queries `trip_stops` for a campground, relying on RLS
+  (already scoped via `trips.user_id`) instead of an explicit join, to
+  tell the UI which of the user's trips already contain a campground.
+- **New shared `AddToTripComponent`** (`src/app/shared/add-to-trip/`,
+  mirrors `FavoriteToggleComponent`'s auth-gated pattern) — a button
+  that opens a `p-popover` listing the user's trips (already-containing
+  ones shown disabled) plus a new-trip-name input. One implementation,
+  reused everywhere it's wired in, so behavior is identical across
+  surfaces.
+- **Wired into `CampgroundTableComponent`** (covers Finder and
+  Favorites, since both reuse this component) **and
+  `CampgroundDetailComponent`** — both plain Angular templates, so the
+  shared component drops in directly.
+- **`CampgroundMapComponent`'s Leaflet popups get a deliberately
+  simpler treatment**, not `AddToTripComponent`: Leaflet popups sit
+  outside Angular's view tree, so hosting the full popover there would
+  mean manually managing an Angular component's lifecycle
+  (`ViewContainerRef.createComponent`/destroy) on every marker rebuild.
+  Instead, popups are built as plain DOM with a single "Add to Trip"
+  button, wired via a direct `addEventListener` at creation time (no
+  Angular involved), that adds the campground to the user's
+  most-recently-created trip (`trips()[0]`, since `loadTrips` already
+  orders newest-first) — no in-popup picker. The button is omitted
+  entirely when signed out or when the user has no trips yet.
+- **No favorite-required gate** — a campground can be added to a trip
+  directly from Finder results without ever being favorited first,
+  since `trip_stops.campground_id` has no dependency on `favorites`.
