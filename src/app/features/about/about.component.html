@@ -1,0 +1,82 @@
+<section class="about-hero">
+  <svg class="scene" viewBox="0 0 1200 460" preserveAspectRatio="xMidYMax slice" role="img" aria-label="A campsite at dusk, with a tent and campfire under the stars">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0b1740" />
+        <stop offset="45%" stop-color="#1f2f6b" />
+        <stop offset="75%" stop-color="#6a3f7a" />
+        <stop offset="100%" stop-color="#e8834a" />
+      </linearGradient>
+      <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff9e6" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#fff9e6" stop-opacity="0" />
+      </radialGradient>
+      <radialGradient id="fireGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffb347" stop-opacity="0.85" />
+        <stop offset="100%" stop-color="#ffb347" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+
+    <rect x="0" y="0" width="1200" height="460" fill="url(#sky)" />
+
+    <circle class="moon-glow" cx="990" cy="90" r="70" fill="url(#moonGlow)" />
+    <circle cx="990" cy="90" r="28" fill="#fdf6e3" />
+
+    @for (star of stars; track star.id) {
+      <circle
+        class="star"
+        [class.twinkle]="star.twinkle"
+        [attr.cx]="star.x"
+        [attr.cy]="star.y"
+        [attr.r]="star.r"
+        [style.animation-delay.ms]="star.delay"
+        fill="#fdf6e3"
+      />
+    }
+
+    <polygon points="0,300 180,190 340,290 520,170 700,300 1200,300 1200,460 0,460" fill="#3a3565" />
+    <polygon points="0,340 220,240 420,330 640,230 900,340 1200,260 1200,460 0,460" fill="#241f45" />
+
+    <g class="treeline" fill="#12102a">
+      @for (tree of trees; track tree.id) {
+        <polygon [attr.points]="tree.points" />
+      }
+    </g>
+
+    <rect x="0" y="392" width="1200" height="68" fill="#0d0b22" />
+
+    <g class="tent">
+      <polygon points="150,392 230,300 310,392" fill="#c9622b" />
+      <polygon points="230,300 230,392" stroke="#7a3a17" stroke-width="3" />
+      <polygon points="205,392 230,335 255,392" fill="#7a3a17" />
+    </g>
+
+    <circle class="fire-glow" cx="430" cy="378" r="60" fill="url(#fireGlow)" />
+    <g class="campfire">
+      <rect x="405" y="386" width="50" height="6" rx="3" fill="#5b3a24" transform="rotate(-10 430 389)" />
+      <rect x="405" y="386" width="50" height="6" rx="3" fill="#4a2e1c" transform="rotate(14 430 389)" />
+      <path class="flame flame-back" d="M430,392 C412,372 418,352 430,338 C442,352 448,372 430,392 Z" fill="#ffb347" />
+      <path class="flame flame-front" d="M430,392 C418,378 422,362 430,352 C438,362 442,378 430,392 Z" fill="#fff2c2" />
+    </g>
+
+    @for (ember of embers; track ember.id) {
+      <circle
+        class="ember"
+        [attr.cx]="ember.x"
+        [attr.r]="ember.r"
+        [style.animation-delay.ms]="ember.delay"
+        cy="380"
+        fill="#ffcf7a"
+      />
+    }
+  </svg>
+
+  <div class="hero-copy">
+    <h1>About Us</h1>
+    <p class="tagline">Because it sounded fun.</p>
+  </div>
+</section>
+
+<section class="contact">
+  <p>Questions, bugs, or ideas? Reach the admin at <a [href]="'mailto:' + adminEmail">{{ adminEmail }}</a>.</p>
+</section>

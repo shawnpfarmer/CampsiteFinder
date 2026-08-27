@@ -41,6 +41,10 @@ export const routes: Routes = [
     canActivate: [adminGuard],
   },
   {
+    path: 'about',
+    loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent),
+  },
+  {
     path: 'campground/:id',
     loadComponent: () =>
       import('./features/campground-detail/campground-detail.component').then(

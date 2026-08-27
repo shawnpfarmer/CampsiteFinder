@@ -1,15 +1,16 @@
 <nav class="app-nav">
-  <a routerLink="/">Finder</a>
-  <a routerLink="/favorites">Favorites</a>
-  <a routerLink="/trips">Trips</a>
+  <a pButton [outlined]="true" severity="secondary" routerLink="/">Finder</a>
+  <a pButton [outlined]="true" severity="secondary" routerLink="/favorites">Favorites</a>
+  <a pButton [outlined]="true" severity="secondary" routerLink="/trips">Trips</a>
+  <a pButton [outlined]="true" severity="secondary" routerLink="/about">About Us</a>
   @if (supabase.isAuthenticated) {
-    <a routerLink="/account">Account</a>
+    <a pButton [outlined]="true" severity="secondary" routerLink="/account">Account</a>
     @if (userService.profile()?.role === 'admin') {
-      <a routerLink="/admin">Admin</a>
+      <a pButton [outlined]="true" severity="secondary" routerLink="/admin">Admin</a>
     }
     <button pButton severity="secondary" class="sign-out-button" (click)="onSignOut()">Sign out</button>
   } @else {
-    <a routerLink="/login">Sign in</a>
+    <a pButton [outlined]="true" severity="secondary" routerLink="/login">Sign in</a>
   }
 </nav>
 <router-outlet />
