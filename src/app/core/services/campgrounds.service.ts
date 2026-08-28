@@ -56,4 +56,14 @@ export class CampgroundsService {
       distanceMeters: 0,
     }));
   }
+
+  async searchByName(query: string): Promise<{ id: string; name: string }[]> {
+    const { data, error } = await this.supabase.client
+      .from('campgrounds')
+      .select('id, name')
+      .ilike('name', `%${query}%`)
+      .limit(20);
+    if (error) throw error;
+    return data ?? [];
+  }
 }

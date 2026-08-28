@@ -6,11 +6,13 @@ import { SupabaseService } from './supabase.service';
 describe('CampgroundsService', () => {
   let service: CampgroundsService;
   let rpcSpy: ReturnType<typeof vi.fn>;
+  let fromSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     rpcSpy = vi.fn();
+    fromSpy = vi.fn();
     TestBed.configureTestingModule({
-      providers: [{ provide: SupabaseService, useValue: { client: { rpc: rpcSpy } } }],
+      providers: [{ provide: SupabaseService, useValue: { client: { rpc: rpcSpy, from: fromSpy } } }],
     });
     service = TestBed.inject(CampgroundsService);
   });
@@ -61,5 +63,32 @@ describe('CampgroundsService', () => {
     rpcSpy.mockResolvedValue({ data: null, error: new Error('boom') });
 
     await expect(service.getByIds(['cg-1'])).rejects.toThrow();
+  });
+
+  it('searches campgrounds by name', async () => {
+    const builder: any = {};
+    ['select', 'ilike', 'limit'].forEach((method) => {
+      builder[method] = vi.fn().mockReturnValue(builder);
+    });
+    builder.then = (resolve: any) => resolve({ data: [{ id: 'cg-1', name: 'Blackwoods Campground' }], error: null });
+    fromSpy.mockReturnValue(builder);
+
+    const results = await service.searchByName('black');
+
+    expect(fromSpy).toHaveBeenCalledWith('campgrounds');
+    expect(builder.ilike).toHaveBeenCalledWith('name', '%black%');
+    expect(builder.limit).toHaveBeenCalledWith(20);
+    expect(results).toEqual([{ id: 'cg-1', name: 'Blackwoods Campground' }]);
+  });
+
+  it('throws when searchByName errors', async () => {
+    const builder: any = {};
+    ['select', 'ilike', 'limit'].forEach((method) => {
+      builder[method] = vi.fn().mockReturnValue(builder);
+    });
+    builder.then = (resolve: any) => resolve({ data: null, error: new Error('boom') });
+    fromSpy.mockReturnValue(builder);
+
+    await expect(service.searchByName('black')).rejects.toThrow('boom');
   });
 });
