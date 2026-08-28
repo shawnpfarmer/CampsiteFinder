@@ -26,13 +26,29 @@ export class LoginComponent {
   async onSubmit(): Promise<void> {
     this.submitting.set(true);
     this.error.set(null);
-    const { error } = await this.supabase.client.auth.signInWithPassword({
+    const { data, error } = await this.supabase.client.auth.signInWithPassword({
       email: this.email,
       password: this.password,
     });
-    this.submitting.set(false);
     if (error) {
+      this.submitting.set(false);
       this.error.set(error.message);
+      return;
+    }
+
+    const { data: userRow, error: suspendedError } = await this.supabase.client
+      .from('users')
+      .select('suspended')
+      .eq('id', data.user!.id)
+      .single();
+    this.submitting.set(false);
+    if (suspendedError) {
+      this.error.set(suspendedError.message);
+      return;
+    }
+    if (userRow.suspended) {
+      await this.supabase.client.auth.signOut();
+      this.error.set('This account has been suspended.');
       return;
     }
     this.router.navigateByUrl('/');
