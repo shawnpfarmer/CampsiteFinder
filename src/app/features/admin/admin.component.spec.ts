@@ -5,15 +5,21 @@ import { AdminUsersService } from '../../core/services/admin-users.service';
 import { CampgroundAttributesService } from '../../core/services/campground-attributes.service';
 import { CampgroundsService } from '../../core/services/campgrounds.service';
 import { AdminUser } from '../../core/models/admin-user.model';
+import { CampgroundAttribute } from '../../core/models/campground-attribute.model';
 import { signal } from '@angular/core';
 
 describe('AdminComponent', () => {
-  function setup(overrides: { users?: AdminUser[] } = {}) {
+  function setup(overrides: { users?: AdminUser[]; attributes?: CampgroundAttribute[] } = {}) {
     const loadUsersSpy = vi.fn().mockResolvedValue(undefined);
     const updateRoleSpy = vi.fn().mockResolvedValue(undefined);
     const setSuspendedSpy = vi.fn().mockResolvedValue(undefined);
     const deleteUserSpy = vi.fn().mockResolvedValue(undefined);
     const usersSignal = signal<AdminUser[]>(overrides.users ?? []);
+    const loadForCampgroundSpy = vi.fn().mockResolvedValue(undefined);
+    const addAttributeSpy = vi.fn().mockResolvedValue(undefined);
+    const updateAttributeSpy = vi.fn().mockResolvedValue(undefined);
+    const deleteAttributeSpy = vi.fn().mockResolvedValue(undefined);
+    const searchByNameSpy = vi.fn().mockResolvedValue([{ id: 'cg-1', name: 'Blackwoods Campground' }]);
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
@@ -30,9 +36,15 @@ describe('AdminComponent', () => {
         },
         {
           provide: CampgroundAttributesService,
-          useValue: { attributes: signal([]), loadForCampground: vi.fn(), addAttribute: vi.fn(), updateAttribute: vi.fn(), deleteAttribute: vi.fn() },
+          useValue: {
+            attributes: signal(overrides.attributes ?? []),
+            loadForCampground: loadForCampgroundSpy,
+            addAttribute: addAttributeSpy,
+            updateAttribute: updateAttributeSpy,
+            deleteAttribute: deleteAttributeSpy,
+          },
         },
-        { provide: CampgroundsService, useValue: { searchByName: vi.fn().mockResolvedValue([]) } },
+        { provide: CampgroundsService, useValue: { searchByName: searchByNameSpy } },
       ],
     });
 
@@ -43,6 +55,11 @@ describe('AdminComponent', () => {
       updateRoleSpy,
       setSuspendedSpy,
       deleteUserSpy,
+      loadForCampgroundSpy,
+      addAttributeSpy,
+      updateAttributeSpy,
+      deleteAttributeSpy,
+      searchByNameSpy,
     };
   }
 
@@ -123,5 +140,95 @@ describe('AdminComponent', () => {
     component.onCancelDeleteUser();
 
     expect(component.confirmingDeleteUserId()).toBeNull();
+  });
+
+  const attribute: CampgroundAttribute = {
+    id: 'attr-1', campgroundId: 'cg-1', type: 'accessibility', name: 'Wheelchair accessible', value: 'yes', createdAt: '2026-08-01T00:00:00Z',
+  };
+
+  it('searches campgrounds by name', async () => {
+    const { component, searchByNameSpy } = setup();
+
+    await component.onSearchCampgrounds({ originalEvent: new Event('input'), query: 'black' } as any);
+
+    expect(searchByNameSpy).toHaveBeenCalledWith('black');
+    expect(component.campgroundSuggestions()).toEqual([{ id: 'cg-1', name: 'Blackwoods Campground' }]);
+  });
+
+  it('loads attributes when a campground is selected', async () => {
+    const { component, loadForCampgroundSpy } = setup();
+
+    await component.onSelectCampground({ originalEvent: new Event('click'), value: { id: 'cg-1', name: 'Blackwoods Campground' } } as any);
+
+    expect(component.selectedCampground).toEqual({ id: 'cg-1', name: 'Blackwoods Campground' });
+    expect(loadForCampgroundSpy).toHaveBeenCalledWith('cg-1');
+  });
+
+  it('adds an attribute for the selected campground and clears the form', async () => {
+    const { component, addAttributeSpy } = setup();
+    component.selectedCampground = { id: 'cg-1', name: 'Blackwoods Campground' };
+    component.newAttributeType = 'fee';
+    component.newAttributeName = 'Reservation fee';
+    component.newAttributeValue = '10';
+
+    await component.onAddAttribute();
+
+    expect(addAttributeSpy).toHaveBeenCalledWith('cg-1', 'fee', 'Reservation fee', '10');
+    expect(component.newAttributeType).toBe('');
+    expect(component.newAttributeName).toBe('');
+    expect(component.newAttributeValue).toBe('');
+  });
+
+  it('does not add an attribute when no campground is selected', async () => {
+    const { component, addAttributeSpy } = setup();
+    component.newAttributeType = 'fee';
+    component.newAttributeName = 'Reservation fee';
+
+    await component.onAddAttribute();
+
+    expect(addAttributeSpy).not.toHaveBeenCalled();
+  });
+
+  it('starts and saves an attribute edit', async () => {
+    const { component, updateAttributeSpy } = setup({ attributes: [attribute] });
+
+    component.onStartEditAttribute(attribute);
+    expect(component.editingAttributeId()).toBe('attr-1');
+    expect(component.editAttributeType).toBe('accessibility');
+
+    component.editAttributeValue = 'no';
+    await component.onSaveEditAttribute('attr-1');
+
+    expect(updateAttributeSpy).toHaveBeenCalledWith('attr-1', 'accessibility', 'Wheelchair accessible', 'no');
+    expect(component.editingAttributeId()).toBeNull();
+  });
+
+  it('cancels an attribute edit', () => {
+    const { component } = setup({ attributes: [attribute] });
+    component.onStartEditAttribute(attribute);
+
+    component.onCancelEditAttribute();
+
+    expect(component.editingAttributeId()).toBeNull();
+  });
+
+  it('deletes an attribute', async () => {
+    const { component, deleteAttributeSpy } = setup({ attributes: [attribute] });
+
+    await component.onDeleteAttribute('attr-1');
+
+    expect(deleteAttributeSpy).toHaveBeenCalledWith('attr-1');
+  });
+
+  it('shows an error if adding an attribute fails', async () => {
+    const { component, addAttributeSpy } = setup();
+    addAttributeSpy.mockRejectedValue(new Error('boom'));
+    component.selectedCampground = { id: 'cg-1', name: 'Blackwoods Campground' };
+    component.newAttributeType = 'fee';
+    component.newAttributeName = 'Reservation fee';
+
+    await component.onAddAttribute();
+
+    expect(component.attributesError()).toBe('boom');
   });
 });

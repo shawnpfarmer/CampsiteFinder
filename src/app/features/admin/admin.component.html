@@ -53,7 +53,60 @@
       </p-table>
     </p-tabpanel>
     <p-tabpanel value="1">
-      <!-- Campground Attributes tab content added in Task 8 -->
+      @if (attributesError()) {
+        <p-message severity="error">{{ attributesError() }}</p-message>
+      }
+      <p-autocomplete
+        [(ngModel)]="selectedCampground"
+        [suggestions]="campgroundSuggestions()"
+        optionLabel="name"
+        placeholder="Search campgrounds by name"
+        [forceSelection]="true"
+        (completeMethod)="onSearchCampgrounds($event)"
+        (onSelect)="onSelectCampground($event)"
+      />
+
+      @if (selectedCampground) {
+        <p-table [value]="attributes()">
+          <ng-template #header>
+            <tr>
+              <th>Type</th>
+              <th>Name</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-attribute>
+            <tr>
+              @if (editingAttributeId() === attribute.id) {
+                <td><input pInputText type="text" [(ngModel)]="editAttributeType" /></td>
+                <td><input pInputText type="text" [(ngModel)]="editAttributeName" /></td>
+                <td><input pInputText type="text" [(ngModel)]="editAttributeValue" /></td>
+                <td>
+                  <button pButton [text]="true" (click)="onCancelEditAttribute()">Cancel</button>
+                  <button pButton (click)="onSaveEditAttribute(attribute.id)">Save</button>
+                </td>
+              } @else {
+                <td>{{ attribute.type }}</td>
+                <td>{{ attribute.name }}</td>
+                <td>{{ attribute.value }}</td>
+                <td>
+                  <button pButton [text]="true" (click)="onStartEditAttribute(attribute)">Edit</button>
+                  <button pButton severity="danger" [text]="true" (click)="onDeleteAttribute(attribute.id)">Delete</button>
+                </td>
+              }
+            </tr>
+          </ng-template>
+          <ng-template #footer>
+            <tr>
+              <td><input pInputText type="text" placeholder="Type" [(ngModel)]="newAttributeType" /></td>
+              <td><input pInputText type="text" placeholder="Name" [(ngModel)]="newAttributeName" /></td>
+              <td><input pInputText type="text" placeholder="Value" [(ngModel)]="newAttributeValue" /></td>
+              <td><button pButton (click)="onAddAttribute()">Add</button></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
     </p-tabpanel>
   </p-tabpanels>
 </p-tabs>

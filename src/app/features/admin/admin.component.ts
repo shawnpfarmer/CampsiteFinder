@@ -6,8 +6,13 @@ import { TabsModule } from 'primeng/tabs';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { InputTextModule } from 'primeng/inputtext';
+import { AutoCompleteModule, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { AdminUsersService } from '../../core/services/admin-users.service';
+import { CampgroundAttributesService } from '../../core/services/campground-attributes.service';
+import { CampgroundsService } from '../../core/services/campgrounds.service';
 import { AdminUser } from '../../core/models/admin-user.model';
+import { CampgroundAttribute } from '../../core/models/campground-attribute.model';
 
 const ROLE_OPTIONS: { label: string; value: 'user' | 'moderator' | 'admin' }[] = [
   { label: 'User', value: 'user' },
@@ -15,10 +20,15 @@ const ROLE_OPTIONS: { label: string; value: 'user' | 'moderator' | 'admin' }[] =
   { label: 'Admin', value: 'admin' },
 ];
 
+interface CampgroundOption {
+  id: string;
+  name: string;
+}
+
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [DatePipe, FormsModule, TableModule, TabsModule, SelectModule, ButtonModule, MessageModule],
+  imports: [DatePipe, FormsModule, TableModule, TabsModule, SelectModule, ButtonModule, MessageModule, InputTextModule, AutoCompleteModule],
   templateUrl: './admin.component.html',
 })
 export class AdminComponent implements OnInit {
@@ -70,6 +80,94 @@ export class AdminComponent implements OnInit {
       this.confirmingDeleteUserId.set(null);
     } catch (err) {
       this.usersError.set(err instanceof Error ? err.message : 'Could not delete user.');
+    }
+  }
+
+  private readonly campgroundAttributesService = inject(CampgroundAttributesService);
+  private readonly campgroundsService = inject(CampgroundsService);
+
+  readonly campgroundSuggestions = signal<CampgroundOption[]>([]);
+  selectedCampground: CampgroundOption | null = null;
+  readonly attributes = this.campgroundAttributesService.attributes;
+  readonly attributesError = signal<string | null>(null);
+
+  newAttributeType = '';
+  newAttributeName = '';
+  newAttributeValue = '';
+
+  readonly editingAttributeId = signal<string | null>(null);
+  editAttributeType = '';
+  editAttributeName = '';
+  editAttributeValue = '';
+
+  async onSearchCampgrounds(event: AutoCompleteCompleteEvent): Promise<void> {
+    const results = await this.campgroundsService.searchByName(event.query);
+    this.campgroundSuggestions.set(results);
+  }
+
+  async onSelectCampground(event: AutoCompleteSelectEvent): Promise<void> {
+    this.attributesError.set(null);
+    const campground = event.value as CampgroundOption;
+    this.selectedCampground = campground;
+    try {
+      await this.campgroundAttributesService.loadForCampground(campground.id);
+    } catch (err) {
+      this.attributesError.set(err instanceof Error ? err.message : 'Could not load attributes.');
+    }
+  }
+
+  async onAddAttribute(): Promise<void> {
+    if (!this.selectedCampground || this.newAttributeType.trim() === '' || this.newAttributeName.trim() === '') {
+      return;
+    }
+    this.attributesError.set(null);
+    try {
+      await this.campgroundAttributesService.addAttribute(
+        this.selectedCampground.id,
+        this.newAttributeType.trim(),
+        this.newAttributeName.trim(),
+        this.newAttributeValue.trim() === '' ? null : this.newAttributeValue.trim(),
+      );
+      this.newAttributeType = '';
+      this.newAttributeName = '';
+      this.newAttributeValue = '';
+    } catch (err) {
+      this.attributesError.set(err instanceof Error ? err.message : 'Could not add attribute.');
+    }
+  }
+
+  onStartEditAttribute(attribute: CampgroundAttribute): void {
+    this.editingAttributeId.set(attribute.id);
+    this.editAttributeType = attribute.type;
+    this.editAttributeName = attribute.name;
+    this.editAttributeValue = attribute.value ?? '';
+  }
+
+  onCancelEditAttribute(): void {
+    this.editingAttributeId.set(null);
+  }
+
+  async onSaveEditAttribute(attributeId: string): Promise<void> {
+    this.attributesError.set(null);
+    try {
+      await this.campgroundAttributesService.updateAttribute(
+        attributeId,
+        this.editAttributeType.trim(),
+        this.editAttributeName.trim(),
+        this.editAttributeValue.trim() === '' ? null : this.editAttributeValue.trim(),
+      );
+      this.editingAttributeId.set(null);
+    } catch (err) {
+      this.attributesError.set(err instanceof Error ? err.message : 'Could not update attribute.');
+    }
+  }
+
+  async onDeleteAttribute(attributeId: string): Promise<void> {
+    this.attributesError.set(null);
+    try {
+      await this.campgroundAttributesService.deleteAttribute(attributeId);
+    } catch (err) {
+      this.attributesError.set(err instanceof Error ? err.message : 'Could not delete attribute.');
     }
   }
 }
