@@ -73,4 +73,15 @@ describe('LoginComponent', () => {
     expect(navigateSpy).not.toHaveBeenCalled();
     expect(component.error()).toBe('This account has been suspended.');
   });
+
+  it('signs out and shows an error if the suspension-check query fails', async () => {
+    signInSpy.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    fromSpy.mockReturnValue(createUsersQueryBuilderMock({ data: null, error: { message: 'Query failed' } }));
+
+    await component.onSubmit();
+
+    expect(signOutSpy).toHaveBeenCalled();
+    expect(navigateSpy).not.toHaveBeenCalled();
+    expect(component.error()).toBe('Query failed');
+  });
 });

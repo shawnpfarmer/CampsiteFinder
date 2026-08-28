@@ -43,6 +43,7 @@ export class LoginComponent {
       .single();
     this.submitting.set(false);
     if (suspendedError) {
+      await this.supabase.client.auth.signOut();
       this.error.set(suspendedError.message);
       return;
     }
