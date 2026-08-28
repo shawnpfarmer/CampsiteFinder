@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { AdminUsersService } from './admin-users.service';
 import { SupabaseService } from './supabase.service';
 
@@ -128,5 +129,13 @@ describe('AdminUsersService', () => {
     invokeSpy.mockResolvedValue({ error: new Error('boom') });
 
     await expect(service.deleteUser('user-1')).rejects.toThrow('boom');
+  });
+
+  it('surfaces the Edge Function response body when deleteUser gets a FunctionsHttpError', async () => {
+    invokeSpy.mockResolvedValue({
+      error: new FunctionsHttpError({ text: () => Promise.resolve('Forbidden') }),
+    });
+
+    await expect(service.deleteUser('user-1')).rejects.toThrow('Forbidden');
   });
 });

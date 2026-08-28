@@ -102,6 +102,15 @@ describe('AdminComponent', () => {
     expect(component.usersError()).toBe('cannot modify your own role');
   });
 
+  it('reloads users from the server when a role change fails, so the dropdown reflects true state', async () => {
+    const { component, updateRoleSpy, loadUsersSpy } = setup({ users: [user] });
+    updateRoleSpy.mockRejectedValue(new Error('cannot modify your own role'));
+
+    await component.onRoleChange('user-1', 'admin');
+
+    expect(loadUsersSpy).toHaveBeenCalled();
+  });
+
   it('toggles suspension', async () => {
     const { component, setSuspendedSpy } = setup({ users: [user] });
 
@@ -153,6 +162,15 @@ describe('AdminComponent', () => {
 
     expect(searchByNameSpy).toHaveBeenCalledWith('black');
     expect(component.campgroundSuggestions()).toEqual([{ id: 'cg-1', name: 'Blackwoods Campground' }]);
+  });
+
+  it('shows an error if searching campgrounds fails', async () => {
+    const { component, searchByNameSpy } = setup();
+    searchByNameSpy.mockRejectedValue(new Error('boom'));
+
+    await component.onSearchCampgrounds({ originalEvent: new Event('input'), query: 'black' } as any);
+
+    expect(component.attributesError()).toBe('boom');
   });
 
   it('loads attributes when a campground is selected', async () => {

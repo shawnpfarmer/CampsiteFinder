@@ -8,6 +8,7 @@ export class CampgroundAttributesService {
   readonly attributes = signal<CampgroundAttribute[]>([]);
 
   async loadForCampground(campgroundId: string): Promise<void> {
+    this.attributes.set([]);
     const { data, error } = await this.supabase.client
       .from('campground_attributes')
       .select('id, campground_id, type, name, value, created_at')

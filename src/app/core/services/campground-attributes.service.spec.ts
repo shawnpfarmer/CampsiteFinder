@@ -63,6 +63,17 @@ describe('CampgroundAttributesService', () => {
     await expect(service.loadForCampground('cg-1')).rejects.toThrow('boom');
   });
 
+  it('clears attributes before loading, even when the load fails', async () => {
+    service.attributes.set([
+      { id: 'attr-1', campgroundId: 'cg-old', type: 'fee', name: 'Old', value: '5', createdAt: '2026-08-01T00:00:00Z' },
+    ]);
+    fromSpy.mockReturnValue(createQueryBuilderMock({ data: null, error: new Error('boom') }));
+
+    await expect(service.loadForCampground('cg-1')).rejects.toThrow('boom');
+
+    expect(service.attributes()).toEqual([]);
+  });
+
   it('adds an attribute and appends it locally', async () => {
     fromSpy.mockReturnValue(
       createQueryBuilderMock({

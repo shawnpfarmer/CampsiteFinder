@@ -53,6 +53,7 @@ export class AdminComponent implements OnInit {
       await this.adminUsersService.updateRole(userId, role);
     } catch (err) {
       this.usersError.set(err instanceof Error ? err.message : 'Could not update role.');
+      await this.adminUsersService.loadUsers().catch(() => {});
     }
   }
 
@@ -101,8 +102,13 @@ export class AdminComponent implements OnInit {
   editAttributeValue = '';
 
   async onSearchCampgrounds(event: AutoCompleteCompleteEvent): Promise<void> {
-    const results = await this.campgroundsService.searchByName(event.query);
-    this.campgroundSuggestions.set(results);
+    this.attributesError.set(null);
+    try {
+      const results = await this.campgroundsService.searchByName(event.query);
+      this.campgroundSuggestions.set(results);
+    } catch (err) {
+      this.attributesError.set(err instanceof Error ? err.message : 'Could not search campgrounds.');
+    }
   }
 
   async onSelectCampground(event: AutoCompleteSelectEvent): Promise<void> {

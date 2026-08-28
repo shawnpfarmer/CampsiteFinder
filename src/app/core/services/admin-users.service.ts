@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service';
 import { AdminUser } from '../models/admin-user.model';
 
@@ -35,7 +36,13 @@ export class AdminUsersService {
     const { error } = await this.supabase.client.functions.invoke('admin-delete-account', {
       body: { target_user_id: userId },
     });
-    if (error) throw error;
+    if (error) {
+      if (error instanceof FunctionsHttpError) {
+        const body = await error.context.text();
+        throw new Error(body || error.message);
+      }
+      throw error;
+    }
     this.users.update((users) => users.filter((u) => u.id !== userId));
   }
 }
