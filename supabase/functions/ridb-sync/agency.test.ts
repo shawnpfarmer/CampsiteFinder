@@ -5,6 +5,10 @@ Deno.test("resolveAgency maps a known USFS org abbreviation", () => {
   assertEquals(resolveAgency([{ OrgAbbrevName: "USFS" }]), "USFS");
 });
 
+Deno.test("resolveAgency maps RIDB's real Forest Service abbreviation 'FS' to USFS", () => {
+  assertEquals(resolveAgency([{ OrgAbbrevName: "FS" }]), "USFS");
+});
+
 Deno.test("resolveAgency maps a known BLM org abbreviation", () => {
   assertEquals(resolveAgency([{ OrgAbbrevName: "BLM" }]), "BLM");
 });

@@ -96,7 +96,12 @@ Deno.serve(async (_req) => {
     });
 
     return new Response(
-      JSON.stringify({ upserted, skipped }),
+      JSON.stringify({
+        upserted,
+        skipped,
+        skipReasons,
+        unmappedOrgAbbrevs: [...unmappedOrgAbbrevs],
+      }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
