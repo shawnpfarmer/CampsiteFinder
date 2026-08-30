@@ -10,6 +10,7 @@ export interface RidbFacilityRecord {
   FacilityDirections?: string;
   FacilityPhone?: string;
   FacilityEmail?: string;
+  FacilityTypeDescription?: string;
   ORGANIZATION?: RidbOrganization[];
 }
 
@@ -31,6 +32,7 @@ export interface CampgroundRow {
 
 export function toCampgroundRow(facility: RidbFacilityRecord): CampgroundRow | null {
   if (!facility.FacilityID) return null;
+  if (!facility.FacilityName) return null;
 
   const lat = facility.FacilityLatitude;
   const lng = facility.FacilityLongitude;
@@ -40,6 +42,16 @@ export function toCampgroundRow(facility: RidbFacilityRecord): CampgroundRow | n
 
   const agency = resolveAgency(facility.ORGANIZATION);
   if (!agency || agency === "NPS") {
+    return null;
+  }
+
+  // Be lenient: only skip on a type mismatch we're sure of. If the field is
+  // absent (unverified against a live API — see plan's Task 9 Step 2),
+  // don't skip.
+  if (
+    facility.FacilityTypeDescription != null &&
+    facility.FacilityTypeDescription !== "Campground"
+  ) {
     return null;
   }
 
@@ -54,7 +66,10 @@ export function toCampgroundRow(facility: RidbFacilityRecord): CampgroundRow | n
     amenities: {},
     fees: [],
     reservation_url: facility.FacilityReservationURL ?? "",
-    directions_url: facility.FacilityDirections ?? "",
+    // RIDB's FacilityDirections is free-text driving directions prose (e.g.
+    // "Take Forest Road 13 north."), not a URL — do not put it in a field
+    // the UI renders as a clickable href.
+    directions_url: "",
     images: [],
     contact: { phone: facility.FacilityPhone ?? "", email: facility.FacilityEmail ?? "" },
   };

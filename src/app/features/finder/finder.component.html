@@ -12,7 +12,7 @@
     </form>
   }
 
-  @if (!loading() && !error()) {
+  @if (!error()) {
     <div class="agency-filter">
       <p-multiselect
         [options]="ALL_AGENCIES"
@@ -22,6 +22,9 @@
         name="agencyFilter"
       />
     </div>
+  }
+
+  @if (!loading() && !error()) {
     <div class="finder-layout">
       <app-campground-map [campgrounds]="campgrounds()" [selectedId]="selected()?.id ?? null" />
       <app-campground-table

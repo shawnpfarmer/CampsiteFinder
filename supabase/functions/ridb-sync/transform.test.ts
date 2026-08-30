@@ -24,6 +24,9 @@ Deno.test("toCampgroundRow converts a USFS facility into a namespaced, PostGIS-r
   assertEquals(row?.agency, "USFS");
   assertEquals(row?.source, "ridb");
   assertEquals(row?.reservation_url, "https://www.recreation.gov/camping/campgrounds/233118");
+  // FacilityDirections is free-text driving-directions prose, not a URL — it
+  // must never end up in directions_url, which the UI renders as an <a href>.
+  assertEquals(row?.directions_url, "");
 });
 
 Deno.test("toCampgroundRow converts a BLM facility", () => {
@@ -62,6 +65,49 @@ Deno.test("toCampgroundRow returns null when FacilityID is missing", () => {
     FacilityDescription: "",
     FacilityLatitude: 44.0,
     FacilityLongitude: -90.0,
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+  };
+
+  assertEquals(toCampgroundRow(facility), null);
+});
+
+Deno.test("toCampgroundRow returns null when FacilityName is missing", () => {
+  const facility = {
+    FacilityID: "998",
+    FacilityName: "",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+  };
+
+  assertEquals(toCampgroundRow(facility), null);
+});
+
+Deno.test("toCampgroundRow converts a facility whose FacilityTypeDescription is Campground", () => {
+  const facility = {
+    FacilityID: "4",
+    FacilityName: "Typed Campground",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    FacilityTypeDescription: "Campground",
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+  };
+
+  const row = toCampgroundRow(facility);
+
+  assertEquals(row?.id, "ridb:4");
+});
+
+Deno.test("toCampgroundRow skips a facility whose FacilityTypeDescription is not Campground", () => {
+  const facility = {
+    FacilityID: "5",
+    FacilityName: "Some Trailhead",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    FacilityTypeDescription: "Trailhead",
     ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
   };
 
