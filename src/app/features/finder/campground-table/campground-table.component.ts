@@ -33,6 +33,7 @@ import { Campground } from '../../../core/models/campground.model';
         <tr>
           <th pSortableColumn="name">Name <p-sort-icon field="name" /></th>
           <th pSortableColumn="parkCode">Park <p-sort-icon field="parkCode" /></th>
+          <th pSortableColumn="agency">Agency <p-sort-icon field="agency" /></th>
           @if (showDistance) {
             <th pSortableColumn="distanceMeters">Distance <p-sort-icon field="distanceMeters" /></th>
           }
@@ -46,6 +47,7 @@ import { Campground } from '../../../core/models/campground.model';
         <tr [pSelectableRow]="campground">
           <td><a [routerLink]="['/campground', campground.id]">{{ campground.name }}</a></td>
           <td>{{ campground.parkCode }}</td>
+          <td>{{ campground.agency }}</td>
           @if (showDistance) {
             <td>{{ campground.distanceMeters / 1609.34 | number: '1.1-1' }} mi</td>
           }

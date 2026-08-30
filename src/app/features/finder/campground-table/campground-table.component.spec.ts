@@ -139,4 +139,13 @@ describe('CampgroundTableComponent', () => {
 
     expect(emitted).toEqual({ campgroundId: 'cg-1', note: 'updated note' });
   });
+
+  it('shows the Agency column with each campground\'s agency', () => {
+    component.campgrounds = [{ id: '1', name: 'A', parkCode: null, agency: 'USFS' } as any];
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Agency');
+    expect(text).toContain('USFS');
+  });
 });
