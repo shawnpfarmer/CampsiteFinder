@@ -44,4 +44,27 @@ describe('FinderComponent', () => {
     expect(component.error()).toBe('denied');
     expect(component.loading()).toBe(false);
   });
+
+  it('defaults to all agencies selected', () => {
+    expect(component.selectedAgencies).toEqual(component.ALL_AGENCIES);
+  });
+
+  it('reloads with the selected agencies and the last-used coordinates when the filter changes', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    component.selectedAgencies = ['USFS'];
+    await component.onAgencyFilterChange();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, ['USFS'],
+    );
+  });
+
+  it('does not reload on filter change before any coordinates have been resolved', async () => {
+    await component.onAgencyFilterChange();
+
+    expect(campgroundsSpy.getNearest).not.toHaveBeenCalled();
+  });
 });
