@@ -21,7 +21,7 @@ describe('CampgroundsService', () => {
     rpcSpy.mockResolvedValue({
       data: [{
         id: 'abc', park_code: 'acad', name: 'Blackwoods', description: 'desc',
-        lat: 44.31, lng: -68.2, amenities: {}, fees: [], reservation_url: 'https://x',
+        lat: 44.31, lng: -68.2, agency: 'NPS', amenities: {}, fees: [], reservation_url: 'https://x',
         directions_url: 'https://y', images: [], contact: {}, distance_m: 1200,
       }],
       error: null,
@@ -30,10 +30,21 @@ describe('CampgroundsService', () => {
     const result = await service.getNearest({ lat: 44.3, lng: -68.1 });
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50,
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
     });
     expect(result[0].name).toBe('Blackwoods');
+    expect(result[0].agency).toBe('NPS');
     expect(result[0].distanceMeters).toBe(1200);
+  });
+
+  it('forwards an agency filter to the RPC', async () => {
+    rpcSpy.mockResolvedValue({ data: [], error: null });
+
+    await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, ['USFS', 'BLM']);
+
+    expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'],
+    });
   });
 
   it('throws when the RPC call errors', async () => {
@@ -46,7 +57,7 @@ describe('CampgroundsService', () => {
     rpcSpy.mockResolvedValue({
       data: [{
         id: 'cg-1', park_code: 'acad', name: 'Blackwoods', description: 'desc',
-        lat: 44.31, lng: -68.2, amenities: {}, fees: [], reservation_url: 'https://x',
+        lat: 44.31, lng: -68.2, agency: 'NPS', amenities: {}, fees: [], reservation_url: 'https://x',
         directions_url: 'https://y', images: [], contact: {},
       }],
       error: null,
@@ -54,8 +65,11 @@ describe('CampgroundsService', () => {
 
     const result = await service.getByIds(['cg-1']);
 
-    expect(rpcSpy).toHaveBeenCalledWith('get_campgrounds_by_ids', { campground_ids: ['cg-1'] });
+    expect(rpcSpy).toHaveBeenCalledWith('get_campgrounds_by_ids', {
+      campground_ids: ['cg-1'], agency_filter: null,
+    });
     expect(result[0].name).toBe('Blackwoods');
+    expect(result[0].agency).toBe('NPS');
     expect(result[0].distanceMeters).toBe(0);
   });
 

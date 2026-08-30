@@ -7,11 +7,12 @@ import { Coordinates } from './geolocation.service';
 export class CampgroundsService {
   private readonly supabase = inject(SupabaseService);
 
-  async getNearest(coords: Coordinates, limit = 50): Promise<Campground[]> {
+  async getNearest(coords: Coordinates, limit = 50, agencies?: string[]): Promise<Campground[]> {
     const { data, error } = await this.supabase.client.rpc('nearest_campgrounds', {
       user_lat: coords.lat,
       user_lng: coords.lng,
       result_limit: limit,
+      agency_filter: agencies ?? null,
     });
 
     if (error) throw error;
@@ -23,6 +24,7 @@ export class CampgroundsService {
       description: row.description,
       lat: row.lat,
       lng: row.lng,
+      agency: row.agency,
       amenities: row.amenities ?? {},
       fees: row.fees ?? [],
       reservationUrl: row.reservation_url,
@@ -33,9 +35,10 @@ export class CampgroundsService {
     }));
   }
 
-  async getByIds(ids: string[]): Promise<Campground[]> {
+  async getByIds(ids: string[], agencies?: string[]): Promise<Campground[]> {
     const { data, error } = await this.supabase.client.rpc('get_campgrounds_by_ids', {
       campground_ids: ids,
+      agency_filter: agencies ?? null,
     });
 
     if (error) throw error;
@@ -47,6 +50,7 @@ export class CampgroundsService {
       description: row.description,
       lat: row.lat,
       lng: row.lng,
+      agency: row.agency,
       amenities: row.amenities ?? {},
       fees: row.fees ?? [],
       reservationUrl: row.reservation_url,
