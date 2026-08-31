@@ -32,12 +32,6 @@ none exists for RIDB rows.
 - Let users filter by four amenities that matter for trip planning: showers,
   potable water, dump station, toilets/restrooms.
 - Let users filter by a price ceiling (Free / Under $20 / Under $40 / Any).
-- Extract real amenity and fee data from RIDB's API so RIDB campgrounds
-  aren't silently excluded from every amenity/fee filter just because the
-  original `ridb-sync` never captured this data. We now have a working
-  `RIDB_API_KEY` (we didn't when the original RIDB sync was designed), so
-  this is the first chance to confirm RIDB's actual field shapes rather
-  than guess at them.
 
 ## Out of Scope (this phase)
 
@@ -49,10 +43,9 @@ none exists for RIDB rows.
   motivating problem more generally; state-based browsing could be a later
   addition if wanted.
 - Map-viewport-based filtering ("show only what's visible on the map").
-- Any special backfill task for RIDB rows synced under the *old*
-  `ridb-sync` transform (before this spec's amenity/fee extraction lands).
-  The next scheduled sync re-upserts every row anyway (idempotent
-  upsert-by-id), so existing rows pick up the new columns naturally.
+- Extracting amenity or fee data from RIDB at all — confirmed against a
+  live response that RIDB doesn't carry it at the facility level (see
+  below). RIDB rows simply stay `null` on all five new columns.
 
 ## Data Model Changes
 
@@ -106,30 +99,35 @@ signature). New parameters:
   max_fee_cents` match (so unknown-fee rows are excluded, same posture as
   the amenity filters).
 
-## RIDB Amenity/Fee Data Extraction
+## RIDB Has No Structured Amenity/Fee Data (confirmed against a live response)
 
-Prerequisite for both the amenities and fees filters actually meaning
-anything for RIDB-sourced campgrounds:
+Before writing this plan, a real `/facilities?full=true` response was
+inspected directly (temporary read-only debug deploy of `ridb-sync`, three
+Wisconsin facilities, no DB writes — reverted immediately after). Finding:
+RIDB's facility-level response has **no amenity fields at all** — no
+showers/toilets/potable-water/dump-station equivalents anywhere. For fees,
+the only relevant field is `FacilityUseFeeDescription`, free-text HTML
+prose (e.g. a pet-fee alert paragraph), not a structured cost like NPS's
+`fees: [{cost, title, description}]`. A `CAMPSITE` array is present but
+empty in all three sampled facilities — it may carry per-site detail via a
+separate `/facilities/{id}/campsites` call, but that's unconfirmed and
+would mean an extra API call per facility, and is not pursued in this
+phase.
 
-- With a working `RIDB_API_KEY` now in hand, inspect a real
-  `/facilities?full=true` response for amenity- and fee-equivalent data —
-  likely under an activities/attributes structure, or possibly a separate
-  endpoint (`/facilities/{id}/attributes`, `/media`, or similar). RIDB's
-  actual shape here is **unconfirmed** — do this research first, the same
-  way the agency org-abbreviation lookup ended up needing a live-API
-  correction (`"FS"` vs. the assumed `"USFS"`) after the original sync
-  shipped. Don't repeat that mistake by guessing field names again when a
-  key is available to just check.
-- Extend `ridb-sync/transform.ts` to populate the five new columns from
-  whatever's found, leaving a column `null` (not `false`/`0`) whenever RIDB
-  doesn't clearly say — same lenient, non-guessing posture as the rest of
-  this sync.
-- Extend `nps-sync/transform.ts` to populate the same five columns by
-  normalizing its already-present raw `amenities`/`fees` JSONB: NPS's raw
-  shapes are inconsistent field-by-field (`"No"` strings, `["None"]`
-  arrays, populated arrays meaning "yes"), so this needs real per-field
-  parsing, not a generic transform. Fee cost strings (e.g. `"16.00"`) parse
-  to cents; the minimum across all fee entries becomes `min_fee_cents`.
+**Decision:** ship amenities and fees NPS-only. RIDB rows simply never get
+`has_showers`/`has_potable_water`/`has_dump_station`/`has_toilets`/
+`min_fee_cents` populated (they stay `null` forever, under the sync's
+normal insert defaults) — the "unknown excluded when filter active" logic
+already designed above handles this correctly without any special-casing.
+No `ridb-sync` changes are needed for this plan at all; only
+`nps-sync/transform.ts` populates the five new columns:
+
+- Normalize NPS's already-present raw `amenities`/`fees` JSONB into the
+  five new columns. NPS's raw shapes are inconsistent field-by-field
+  (`"No"` strings, `["None"]` arrays, populated arrays meaning "yes"), so
+  this needs real per-field parsing, not a generic transform. Fee cost
+  strings (e.g. `"16.00"`) parse to cents; the minimum across all fee
+  entries becomes `min_fee_cents`.
 
 ## Distance Radius Filter
 
@@ -182,9 +180,10 @@ column, not a skipped row and not a failed sync run.
 
 ## Testing
 
-- Extend `ridb-sync/transform.test.ts` and `nps-sync/transform.test.ts`
-  with cases for each of the five new columns: present-and-true,
-  present-and-false, and absent/unparseable (→ `null`).
+- Extend `nps-sync/transform.test.ts` with cases for each of the five new
+  columns: present-and-true, present-and-false, and absent/unparseable
+  (→ `null`). No `ridb-sync/transform.test.ts` changes — RIDB rows never
+  populate these columns in this plan.
 - Extend `CampgroundsService`'s and `FinderComponent`'s spec files with the
   same call-args-forwarding pattern already used for the agency filter
   (e.g. "forwards `maxDistanceMeters`/`requireShowers`/`maxFeeCents` to the
@@ -196,8 +195,9 @@ column, not a skipped row and not a failed sync run.
 
 ## Open Questions / Follow-ups
 
-- RIDB's exact amenity/fee field names and shapes — confirm against a live
-  response before writing `ridb-sync`'s extraction code, not after.
+- Whether `/facilities/{id}/campsites` carries real per-site amenity data
+  worth a future phase — not pursued here (see above), genuinely unknown
+  rather than ruled out.
 - Whether the five new columns get surfaced on the `Campground` model for
   display, or stay filter-only this phase (flagged above under Frontend
   Changes) — decide explicitly in the implementation plan, don't let it
