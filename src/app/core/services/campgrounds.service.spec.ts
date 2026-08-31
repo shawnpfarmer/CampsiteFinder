@@ -30,7 +30,7 @@ describe('CampgroundsService', () => {
     const result = await service.getNearest({ lat: 44.3, lng: -68.1 });
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null, max_distance_m: null,
     });
     expect(result[0].name).toBe('Blackwoods');
     expect(result[0].agency).toBe('NPS');
@@ -43,7 +43,17 @@ describe('CampgroundsService', () => {
     await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, ['USFS', 'BLM']);
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'],
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'], max_distance_m: null,
+    });
+  });
+
+  it('forwards a max distance filter to the RPC', async () => {
+    rpcSpy.mockResolvedValue({ data: [], error: null });
+
+    await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, undefined, 80467);
+
+    expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null, max_distance_m: 80467,
     });
   });
 

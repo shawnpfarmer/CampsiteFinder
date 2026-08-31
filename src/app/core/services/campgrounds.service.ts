@@ -7,12 +7,18 @@ import { Coordinates } from './geolocation.service';
 export class CampgroundsService {
   private readonly supabase = inject(SupabaseService);
 
-  async getNearest(coords: Coordinates, limit = 50, agencies?: string[]): Promise<Campground[]> {
+  async getNearest(
+    coords: Coordinates,
+    limit = 50,
+    agencies?: string[],
+    maxDistanceMeters?: number,
+  ): Promise<Campground[]> {
     const { data, error } = await this.supabase.client.rpc('nearest_campgrounds', {
       user_lat: coords.lat,
       user_lng: coords.lng,
       result_limit: limit,
       agency_filter: agencies ?? null,
+      max_distance_m: maxDistanceMeters ?? null,
     });
 
     if (error) throw error;
