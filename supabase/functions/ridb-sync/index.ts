@@ -5,12 +5,6 @@ import { resolveAgency } from "./agency.ts";
 const RIDB_API_BASE = "https://ridb.recreation.gov/api/v1";
 const CAMPING_ACTIVITY_ID = "9";
 
-// US Census Bureau Midwest region — the region this sync exists to cover
-// (see docs/superpowers/specs/2026-08-28-ridb-midwest-analysis.md). RIDB's
-// `state` param accepts a comma-delimited list; widen this array to expand
-// coverage later without any other code change.
-const MIDWEST_STATES = ["IL", "IN", "IA", "KS", "MI", "MN", "MO", "NE", "ND", "OH", "SD", "WI"];
-
 Deno.serve(async (_req) => {
   const ridbApiKey = Deno.env.get("RIDB_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -37,8 +31,8 @@ Deno.serve(async (_req) => {
   try {
     while (offset < total) {
       const url =
-        `${RIDB_API_BASE}/facilities?state=${MIDWEST_STATES.join(",")}` +
-        `&activity=${CAMPING_ACTIVITY_ID}&full=true&limit=${limit}&offset=${offset}`;
+        `${RIDB_API_BASE}/facilities?activity=${CAMPING_ACTIVITY_ID}` +
+        `&full=true&limit=${limit}&offset=${offset}`;
       const response = await fetch(url, {
         headers: { apikey: ridbApiKey, Accept: "application/json" },
       });
