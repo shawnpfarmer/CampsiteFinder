@@ -17,10 +17,25 @@
       <p-multiselect
         [options]="ALL_AGENCIES"
         [(ngModel)]="selectedAgencies"
-        (onChange)="onAgencyFilterChange()"
+        (onChange)="onFilterChange()"
         placeholder="Filter by agency"
         name="agencyFilter"
       />
+      <label class="near-me-toggle">
+        <p-toggleswitch [(ngModel)]="nearMeEnabled" (onChange)="onFilterChange()" name="nearMe" />
+        Near me
+      </label>
+      @if (nearMeEnabled) {
+        <p-select
+          [options]="RADIUS_OPTIONS"
+          [(ngModel)]="radiusMiles"
+          (onChange)="onFilterChange()"
+          name="radiusMiles"
+        >
+          <ng-template #selectedItem let-mi>{{ mi }} mi</ng-template>
+          <ng-template #item let-mi>{{ mi }} mi</ng-template>
+        </p-select>
+      }
     </div>
   }
 

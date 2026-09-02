@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { FinderComponent } from './finder.component';
+import { FinderComponent, SHOW_ALL_RADIUS_M, METERS_PER_MILE } from './finder.component';
 import { GeolocationService } from '../../core/services/geolocation.service';
 import { CampgroundsService } from '../../core/services/campgrounds.service';
 
@@ -49,21 +49,70 @@ describe('FinderComponent', () => {
     expect(component.selectedAgencies).toEqual(component.ALL_AGENCIES);
   });
 
+  it('defaults to near-me off (show all)', () => {
+    expect(component.nearMeEnabled).toBe(false);
+  });
+
+  it('defaults the near-me radius to 50 miles', () => {
+    expect(component.radiusMiles).toBe(50);
+  });
+
+  it('loads with the show-all radius by default', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+
+    await component.ngOnInit();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M,
+    );
+  });
+
   it('reloads with the selected agencies and the last-used coordinates when the filter changes', async () => {
     geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
     campgroundsSpy.getNearest.mockResolvedValue([]);
     await component.ngOnInit();
 
     component.selectedAgencies = ['USFS'];
-    await component.onAgencyFilterChange();
+    await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, ['USFS'],
+      { lat: 44.3, lng: -68.2 }, 50, ['USFS'], SHOW_ALL_RADIUS_M,
+    );
+  });
+
+  it('applies the selected radius in meters when near-me is enabled', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    component.nearMeEnabled = true;
+    component.radiusMiles = 100;
+    await component.onFilterChange();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, 100 * METERS_PER_MILE,
+    );
+  });
+
+  it('reverts to the show-all radius when near-me is turned back off', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    component.nearMeEnabled = true;
+    component.radiusMiles = 25;
+    await component.onFilterChange();
+    component.nearMeEnabled = false;
+    await component.onFilterChange();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M,
     );
   });
 
   it('does not reload on filter change before any coordinates have been resolved', async () => {
-    await component.onAgencyFilterChange();
+    await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).not.toHaveBeenCalled();
   });

@@ -44,11 +44,4 @@ export const routes: Routes = [
     path: 'about',
     loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent),
   },
-  {
-    path: 'campground/:id',
-    loadComponent: () =>
-      import('./features/campground-detail/campground-detail.component').then(
-        (m) => m.CampgroundDetailComponent,
-      ),
-  },
 ];

@@ -3,6 +3,15 @@ import { vi } from 'vitest';
 import { CampgroundsService } from './campgrounds.service';
 import { SupabaseService } from './supabase.service';
 
+// nearest_campgrounds paginates via .range(), so rpc() must return a
+// chainable, awaitable builder rather than resolving directly.
+function chainableRpc(data: any, error: any = null) {
+  const builder: any = {};
+  builder.range = vi.fn().mockReturnValue(builder);
+  builder.then = (resolve: any) => resolve({ data, error });
+  return builder;
+}
+
 describe('CampgroundsService', () => {
   let service: CampgroundsService;
   let rpcSpy: ReturnType<typeof vi.fn>;
@@ -18,14 +27,11 @@ describe('CampgroundsService', () => {
   });
 
   it('maps RPC rows to Campground objects', async () => {
-    rpcSpy.mockResolvedValue({
-      data: [{
-        id: 'abc', park_code: 'acad', name: 'Blackwoods', description: 'desc',
-        lat: 44.31, lng: -68.2, agency: 'NPS', amenities: {}, fees: [], reservation_url: 'https://x',
-        directions_url: 'https://y', images: [], contact: {}, distance_m: 1200,
-      }],
-      error: null,
-    });
+    rpcSpy.mockReturnValue(chainableRpc([{
+      id: 'abc', park_code: 'acad', name: 'Blackwoods', description: 'desc',
+      lat: 44.31, lng: -68.2, agency: 'NPS', amenities: {}, fees: [], reservation_url: 'https://x',
+      directions_url: 'https://y', images: [], contact: {}, distance_m: 1200,
+    }]));
 
     const result = await service.getNearest({ lat: 44.3, lng: -68.1 });
 
@@ -38,7 +44,7 @@ describe('CampgroundsService', () => {
   });
 
   it('forwards an agency filter to the RPC', async () => {
-    rpcSpy.mockResolvedValue({ data: [], error: null });
+    rpcSpy.mockReturnValue(chainableRpc([]));
 
     await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, ['USFS', 'BLM']);
 
@@ -48,7 +54,7 @@ describe('CampgroundsService', () => {
   });
 
   it('forwards a max distance filter to the RPC', async () => {
-    rpcSpy.mockResolvedValue({ data: [], error: null });
+    rpcSpy.mockReturnValue(chainableRpc([]));
 
     await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, undefined, 80467);
 
@@ -58,9 +64,26 @@ describe('CampgroundsService', () => {
   });
 
   it('throws when the RPC call errors', async () => {
-    rpcSpy.mockResolvedValue({ data: null, error: new Error('boom') });
+    rpcSpy.mockReturnValue(chainableRpc(null, new Error('boom')));
 
     await expect(service.getNearest({ lat: 0, lng: 0 })).rejects.toThrow();
+  });
+
+  it("paginates past Supabase's 1000-row response cap to fetch every matching row", async () => {
+    const makeRow = (id: string) => ({
+      id, park_code: null, name: id, description: '', lat: 0, lng: 0, agency: 'NPS',
+      amenities: {}, fees: [], reservation_url: '', directions_url: '', images: [],
+      contact: {}, distance_m: 0,
+    });
+    const fullPage = Array.from({ length: 1000 }, (_, i) => makeRow(`row-${i}`));
+    const finalPage = [makeRow('row-1000')];
+    let call = 0;
+    rpcSpy.mockImplementation(() => chainableRpc(call++ === 0 ? fullPage : finalPage));
+
+    const result = await service.getNearest({ lat: 0, lng: 0 }, 50, undefined, 1);
+
+    expect(rpcSpy).toHaveBeenCalledTimes(2);
+    expect(result.length).toBe(1001);
   });
 
   it('maps RPC rows to Campground objects for getByIds', async () => {

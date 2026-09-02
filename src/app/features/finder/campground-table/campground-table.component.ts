@@ -1,11 +1,11 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { FavoriteToggleComponent } from '../../../shared/favorite-toggle/favorite-toggle.component';
 import { AddToTripComponent } from '../../../shared/add-to-trip/add-to-trip.component';
+import { CampgroundDetailPanelComponent } from './campground-detail-panel/campground-detail-panel.component';
 import { Campground } from '../../../core/models/campground.model';
 
 @Component({
@@ -15,10 +15,10 @@ import { Campground } from '../../../core/models/campground.model';
     TableModule,
     DecimalPipe,
     FormsModule,
-    RouterLink,
     InputTextModule,
     FavoriteToggleComponent,
     AddToTripComponent,
+    CampgroundDetailPanelComponent,
   ],
   template: `
     <p-table
@@ -45,7 +45,7 @@ import { Campground } from '../../../core/models/campground.model';
       </ng-template>
       <ng-template #body let-campground>
         <tr [pSelectableRow]="campground">
-          <td><a [routerLink]="['/campground', campground.id]">{{ campground.name }}</a></td>
+          <td><a class="campground-name-link" (click)="toggleExpanded(campground.id)">{{ campground.name }}</a></td>
           <td>{{ campground.parkCode }}</td>
           <td>{{ campground.agency }}</td>
           @if (showDistance) {
@@ -65,8 +65,20 @@ import { Campground } from '../../../core/models/campground.model';
             <app-add-to-trip [campgroundId]="campground.id" />
           </td>
         </tr>
+        @if (expandedId === campground.id) {
+          <tr class="campground-detail-row">
+            <td [attr.colspan]="columnCount">
+              <app-campground-detail-panel [campground]="campground" />
+            </td>
+          </tr>
+        }
       </ng-template>
     </p-table>
+  `,
+  styles: `
+    .campground-name-link {
+      cursor: pointer;
+    }
   `,
 })
 export class CampgroundTableComponent implements OnChanges {
@@ -79,6 +91,15 @@ export class CampgroundTableComponent implements OnChanges {
   @Output() noteChange = new EventEmitter<{ campgroundId: string; note: string }>();
 
   noteDrafts: Record<string, string> = {};
+  expandedId: string | null = null;
+
+  get columnCount(): number {
+    return 4 + (this.showDistance ? 1 : 0) + (this.showNotes ? 1 : 0);
+  }
+
+  toggleExpanded(campgroundId: string): void {
+    this.expandedId = this.expandedId === campgroundId ? null : campgroundId;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['notes']) {

@@ -13,17 +13,33 @@ export class CampgroundsService {
     agencies?: string[],
     maxDistanceMeters?: number,
   ): Promise<Campground[]> {
-    const { data, error } = await this.supabase.client.rpc('nearest_campgrounds', {
-      user_lat: coords.lat,
-      user_lng: coords.lng,
-      result_limit: limit,
-      agency_filter: agencies ?? null,
-      max_distance_m: maxDistanceMeters ?? null,
-    });
+    // Supabase/PostgREST caps any single response at 1000 rows (its default
+    // max-rows setting) regardless of the RPC's own result_limit — when
+    // max_distance_m is set, nearest_campgrounds can genuinely match more
+    // than that, so page past the cap with Range requests until a page
+    // comes back short.
+    const PAGE_SIZE = 1000;
+    const rows: any[] = [];
+    let offset = 0;
 
-    if (error) throw error;
+    while (true) {
+      const { data, error } = await this.supabase.client
+        .rpc('nearest_campgrounds', {
+          user_lat: coords.lat,
+          user_lng: coords.lng,
+          result_limit: limit,
+          agency_filter: agencies ?? null,
+          max_distance_m: maxDistanceMeters ?? null,
+        })
+        .range(offset, offset + PAGE_SIZE - 1);
 
-    return (data ?? []).map((row: any) => ({
+      if (error) throw error;
+      rows.push(...(data ?? []));
+      if (!data || data.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    return rows.map((row: any) => ({
       id: row.id,
       parkCode: row.park_code,
       name: row.name,

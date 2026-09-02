@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { CampgroundTableComponent } from './campground-table.component';
 import { AddToTripComponent } from '../../../shared/add-to-trip/add-to-trip.component';
+import { CampgroundDetailPanelComponent } from './campground-detail-panel/campground-detail-panel.component';
 import { FavoritesService } from '../../../core/services/favorites.service';
 import { TripsService } from '../../../core/services/trips.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -16,7 +16,6 @@ describe('CampgroundTableComponent', () => {
     TestBed.configureTestingModule({
       imports: [CampgroundTableComponent],
       providers: [
-        provideRouter([]),
         { provide: SupabaseService, useValue: { isAuthenticated: true } },
         {
           provide: FavoritesService,
@@ -147,5 +146,46 @@ describe('CampgroundTableComponent', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Agency');
     expect(text).toContain('USFS');
+  });
+
+  it('expands a row to show its details when the name is clicked', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any];
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('.campground-name-link')).triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    const panel = fixture.debugElement.query(By.directive(CampgroundDetailPanelComponent));
+    expect(panel).toBeTruthy();
+    expect(panel.componentInstance.campground.id).toBe('1');
+  });
+
+  it('collapses an expanded row when its name is clicked again', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any];
+    fixture.detectChanges();
+    const nameLink = fixture.debugElement.query(By.css('.campground-name-link'));
+
+    nameLink.triggerEventHandler('click', null);
+    fixture.detectChanges();
+    nameLink.triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    const panel = fixture.debugElement.query(By.directive(CampgroundDetailPanelComponent));
+    expect(panel).toBeFalsy();
+  });
+
+  it('only expands one row at a time', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any, { id: '2', name: 'B' } as any];
+    fixture.detectChanges();
+    const nameLinks = fixture.debugElement.queryAll(By.css('.campground-name-link'));
+
+    nameLinks[0].triggerEventHandler('click', null);
+    fixture.detectChanges();
+    nameLinks[1].triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    const panels = fixture.debugElement.queryAll(By.directive(CampgroundDetailPanelComponent));
+    expect(panels.length).toBe(1);
+    expect(panels[0].componentInstance.campground.id).toBe('2');
   });
 });
