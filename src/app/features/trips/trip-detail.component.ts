@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { CampgroundMapComponent } from '../finder/campground-map/campground-map.component';
+import { CampgroundDetailPanelComponent } from '../finder/campground-table/campground-detail-panel/campground-detail-panel.component';
 import { TripsService } from '../../core/services/trips.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { CampgroundsService } from '../../core/services/campgrounds.service';
@@ -16,8 +17,21 @@ import { Campground } from '../../core/models/campground.model';
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [TableModule, ButtonModule, InputTextModule, MessageModule, FormsModule, CampgroundMapComponent],
+  imports: [
+    TableModule,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    FormsModule,
+    CampgroundMapComponent,
+    CampgroundDetailPanelComponent,
+  ],
   templateUrl: './trip-detail.component.html',
+  styles: `
+    .campground-name-link {
+      cursor: pointer;
+    }
+  `,
 })
 export class TripDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -43,6 +57,11 @@ export class TripDetailComponent implements OnInit {
 
   nameDraft = '';
   addStopCampgroundId = '';
+  expandedStopId: string | null = null;
+
+  toggleExpanded(stopId: string): void {
+    this.expandedStopId = this.expandedStopId === stopId ? null : stopId;
+  }
 
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');

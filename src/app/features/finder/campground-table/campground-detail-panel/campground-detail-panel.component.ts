@@ -17,6 +17,19 @@ import { Campground } from '../../../../core/models/campground.model';
       <a [href]="campground.directionsUrl" target="_blank" rel="noopener">Directions</a>
     </div>
   `,
+  styles: `
+    .campground-detail-panel {
+      background: var(--p-highlight-background);
+      border-left: 4px solid var(--p-primary-color);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+    }
+
+    .campground-detail-panel h3 {
+      margin-top: 0;
+      color: var(--p-highlight-color);
+    }
+  `,
 })
 export class CampgroundDetailPanelComponent {
   @Input({ required: true }) campground!: Campground;

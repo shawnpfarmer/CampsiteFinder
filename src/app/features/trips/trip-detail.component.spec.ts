@@ -212,6 +212,43 @@ describe('TripDetailComponent', () => {
     expect(component.stops().length).toBe(1);
   });
 
+  it('has no stop expanded initially', () => {
+    const component = configure();
+
+    expect(component.expandedStopId).toBeNull();
+  });
+
+  it('expands a stop when its name is toggled', async () => {
+    const component = configure({
+      getTripStops: vi.fn().mockResolvedValue([
+        { stopId: 'stop-1', campground: { id: 'cg-1', name: 'A' } },
+      ]),
+    });
+    await component.ngOnInit();
+
+    component.toggleExpanded('stop-1');
+
+    expect(component.expandedStopId).toBe('stop-1');
+  });
+
+  it('collapses an expanded stop when toggled again', async () => {
+    const component = configure();
+    component.toggleExpanded('stop-1');
+
+    component.toggleExpanded('stop-1');
+
+    expect(component.expandedStopId).toBeNull();
+  });
+
+  it('only expands one stop at a time', async () => {
+    const component = configure();
+    component.toggleExpanded('stop-1');
+
+    component.toggleExpanded('stop-2');
+
+    expect(component.expandedStopId).toBe('stop-2');
+  });
+
   it('surfaces an error and resyncs from the server when reordering fails', async () => {
     const serverOrder = [
       { stopId: 'stop-a', campground: { id: 'cg-1', name: 'A' } },
