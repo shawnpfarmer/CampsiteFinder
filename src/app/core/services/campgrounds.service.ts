@@ -12,6 +12,7 @@ export class CampgroundsService {
     limit = 50,
     agencies?: string[],
     maxDistanceMeters?: number,
+    states?: string[],
   ): Promise<Campground[]> {
     // Supabase/PostgREST caps any single response at 1000 rows (its default
     // max-rows setting) regardless of the RPC's own result_limit — when
@@ -30,6 +31,7 @@ export class CampgroundsService {
           result_limit: limit,
           agency_filter: agencies ?? null,
           max_distance_m: maxDistanceMeters ?? null,
+          state_filter: states ?? null,
         })
         .range(offset, offset + PAGE_SIZE - 1);
 
@@ -47,6 +49,7 @@ export class CampgroundsService {
       lat: row.lat,
       lng: row.lng,
       agency: row.agency,
+      state: row.state,
       amenities: row.amenities ?? {},
       fees: row.fees ?? [],
       reservationUrl: row.reservation_url,
@@ -73,6 +76,7 @@ export class CampgroundsService {
       lat: row.lat,
       lng: row.lng,
       agency: row.agency,
+      state: row.state,
       amenities: row.amenities ?? {},
       fees: row.fees ?? [],
       reservationUrl: row.reservation_url,

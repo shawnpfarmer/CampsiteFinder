@@ -48,6 +48,7 @@ describe('CampgroundDetailPanelComponent', () => {
       lat: 0,
       lng: 0,
       agency: 'NPS',
+      state: null,
       amenities: {},
       fees: [],
       reservationUrl: '',

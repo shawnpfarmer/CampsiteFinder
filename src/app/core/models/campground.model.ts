@@ -6,6 +6,7 @@ export interface Campground {
   lat: number;
   lng: number;
   agency: string;
+  state: string | null;
   amenities: Record<string, unknown>;
   fees: unknown[];
   reservationUrl: string;

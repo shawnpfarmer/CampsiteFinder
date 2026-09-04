@@ -36,7 +36,8 @@ describe('CampgroundsService', () => {
     const result = await service.getNearest({ lat: 44.3, lng: -68.1 });
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null, max_distance_m: null,
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
+      max_distance_m: null, state_filter: null,
     });
     expect(result[0].name).toBe('Blackwoods');
     expect(result[0].agency).toBe('NPS');
@@ -49,7 +50,8 @@ describe('CampgroundsService', () => {
     await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, ['USFS', 'BLM']);
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'], max_distance_m: null,
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'],
+      max_distance_m: null, state_filter: null,
     });
   });
 
@@ -59,8 +61,33 @@ describe('CampgroundsService', () => {
     await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, undefined, 80467);
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
-      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null, max_distance_m: 80467,
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
+      max_distance_m: 80467, state_filter: null,
     });
+  });
+
+  it('forwards a state filter to the RPC', async () => {
+    rpcSpy.mockReturnValue(chainableRpc([]));
+
+    await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, undefined, undefined, ['CO', 'WY']);
+
+    expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
+      max_distance_m: null, state_filter: ['CO', 'WY'],
+    });
+  });
+
+  it('maps the state column onto the returned Campground', async () => {
+    rpcSpy.mockReturnValue(chainableRpc([{
+      id: 'abc', park_code: 'acad', name: 'Blackwoods', description: 'desc',
+      lat: 44.31, lng: -68.2, agency: 'NPS', state: 'ME', amenities: {}, fees: [],
+      reservation_url: 'https://x', directions_url: 'https://y', images: [], contact: {},
+      distance_m: 1200,
+    }]));
+
+    const result = await service.getNearest({ lat: 44.3, lng: -68.1 });
+
+    expect(result[0].state).toBe('ME');
   });
 
   it('throws when the RPC call errors', async () => {
@@ -104,6 +131,21 @@ describe('CampgroundsService', () => {
     expect(result[0].name).toBe('Blackwoods');
     expect(result[0].agency).toBe('NPS');
     expect(result[0].distanceMeters).toBe(0);
+  });
+
+  it('maps the state column onto the returned Campground for getByIds', async () => {
+    rpcSpy.mockResolvedValue({
+      data: [{
+        id: 'cg-1', park_code: 'acad', name: 'Blackwoods', description: 'desc',
+        lat: 44.31, lng: -68.2, agency: 'NPS', state: 'ME', amenities: {}, fees: [],
+        reservation_url: 'https://x', directions_url: 'https://y', images: [], contact: {},
+      }],
+      error: null,
+    });
+
+    const result = await service.getByIds(['cg-1']);
+
+    expect(result[0].state).toBe('ME');
   });
 
   it('throws when the getByIds RPC call errors', async () => {
