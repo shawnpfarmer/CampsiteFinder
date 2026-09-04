@@ -42,3 +42,71 @@ Deno.test("toCampgroundRow returns null when coordinates are missing", () => {
 
   assertEquals(toCampgroundRow(record), null);
 });
+
+Deno.test("toCampgroundRow reads state from the Physical address entry", () => {
+  const record = {
+    id: "phys1",
+    parkCode: "acad",
+    name: "Physical Address Campground",
+    description: "",
+    latitude: "44.3106",
+    longitude: "-68.2044",
+    amenities: {},
+    fees: [],
+    reservationUrl: "",
+    directionsUrl: "",
+    images: [],
+    contacts: {},
+    addresses: [
+      { type: "Mailing", stateCode: "DC" },
+      { type: "Physical", stateCode: "ME" },
+    ],
+  };
+
+  const row = toCampgroundRow(record as any);
+
+  assertEquals(row?.state, "ME");
+});
+
+Deno.test("toCampgroundRow falls back to the first address when none is typed Physical", () => {
+  const record = {
+    id: "mail1",
+    parkCode: "acad",
+    name: "Mailing Only Campground",
+    description: "",
+    latitude: "44.3106",
+    longitude: "-68.2044",
+    amenities: {},
+    fees: [],
+    reservationUrl: "",
+    directionsUrl: "",
+    images: [],
+    contacts: {},
+    addresses: [{ type: "Mailing", stateCode: "ME" }],
+  };
+
+  const row = toCampgroundRow(record as any);
+
+  assertEquals(row?.state, "ME");
+});
+
+Deno.test("toCampgroundRow sets state to null when no address is present", () => {
+  const record = {
+    id: "noaddr1",
+    parkCode: "acad",
+    name: "No Address Campground",
+    description: "",
+    latitude: "44.3106",
+    longitude: "-68.2044",
+    amenities: {},
+    fees: [],
+    reservationUrl: "",
+    directionsUrl: "",
+    images: [],
+    contacts: {},
+  };
+
+  const row = toCampgroundRow(record as any);
+
+  assertEquals(row?.state, null);
+});
