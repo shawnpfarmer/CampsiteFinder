@@ -1,6 +1,8 @@
 import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
+import { LeafletMarkerClusterModule } from '@bluehalo/ngx-leaflet-markercluster';
 import * as L from 'leaflet';
+import 'leaflet.markercluster';
 import { Campground } from '../../../core/models/campground.model';
 import { TripsService } from '../../../core/services/trips.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -24,13 +26,15 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-campground-map',
   standalone: true,
-  imports: [LeafletModule],
+  imports: [LeafletModule, LeafletMarkerClusterModule],
   template: `
     <div
       class="campground-map"
       leaflet
       [leafletOptions]="mapOptions"
-      [leafletLayers]="markerLayers"
+      [leafletLayers]="routeLayers"
+      [leafletMarkerCluster]="markerLayers"
+      [leafletMarkerClusterOptions]="markerClusterOptions"
       (leafletMapReady)="onMapReady($event)"
     ></div>
   `,
@@ -57,6 +61,12 @@ export class CampgroundMapComponent implements OnChanges {
   };
 
   markerLayers: L.Layer[] = [];
+  routeLayers: L.Layer[] = [];
+  // MarkerClusterGroup.addLayers (which the leafletMarkerCluster directive
+  // uses) expects only markers — a polyline has no getLatLng() and isn't a
+  // marker to cluster, so the trip-route line goes through plain
+  // leafletLayers instead, in the separate routeLayers array above.
+  readonly markerClusterOptions: L.MarkerClusterGroupOptions = {};
 
   onMapReady(map: L.Map): void {
     this.map = map;
@@ -65,15 +75,16 @@ export class CampgroundMapComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['campgrounds'] || changes['ordered']) {
       const markers = this.campgrounds.map((c, index) =>
-        L.marker([c.lat, c.lng], this.ordered ? { icon: this.numberedIcon(index + 1) } : {}).bindPopup(
-          this.buildPopupContent(c),
-        ),
+        L.marker([c.lat, c.lng], this.ordered ? { icon: this.numberedIcon(index + 1) } : {})
+          .bindPopup(this.buildPopupContent(c))
+          .on('click', () => this.map?.setView([c.lat, c.lng], 12)),
       );
+      this.markerLayers = markers;
       if (this.ordered && this.campgrounds.length > 1) {
         const route = L.polyline(this.campgrounds.map((c) => [c.lat, c.lng] as L.LatLngTuple));
-        this.markerLayers = [...markers, route];
+        this.routeLayers = [route];
       } else {
-        this.markerLayers = markers;
+        this.routeLayers = [];
       }
       // In ordered (trip route) mode nothing else ever moves the viewport —
       // `selectedId` is always null there — so without this the map sits on

@@ -133,7 +133,8 @@ describe('CampgroundMapComponent', () => {
     component.ordered = true;
     component.ngOnChanges({ campgrounds: {} as any, ordered: {} as any });
 
-    expect(component.markerLayers.length).toBe(3);
+    expect(component.markerLayers.length).toBe(2);
+    expect(component.routeLayers.length).toBe(1);
   });
 
   it('does not add a route line for a single-stop ordered trip', () => {
@@ -200,6 +201,32 @@ describe('CampgroundMapComponent', () => {
     expect(fitBounds).not.toHaveBeenCalled();
   });
 
+  it('zooms to a marker when it is clicked', () => {
+    const setView = vi.fn();
+    component.onMapReady({ fitBounds: vi.fn(), setView } as any);
+    component.campgrounds = [{ id: '1', lat: 44.3, lng: -68.2, name: 'A' } as any];
+
+    component.ngOnChanges({ campgrounds: {} as any });
+    (component.markerLayers[0] as any).fire('click');
+
+    expect(setView).toHaveBeenCalledWith([44.3, -68.2], 12);
+  });
+
+  it('zooms to the clicked marker even in ordered (trip route) mode', () => {
+    const setView = vi.fn();
+    component.onMapReady({ fitBounds: vi.fn(), setView } as any);
+    component.campgrounds = [
+      { id: '1', lat: 44.3, lng: -68.2, name: 'A' } as any,
+      { id: '2', lat: 45.0, lng: -69.0, name: 'B' } as any,
+    ];
+    component.ordered = true;
+
+    component.ngOnChanges({ campgrounds: {} as any, ordered: {} as any });
+    (component.markerLayers[1] as any).fire('click');
+
+    expect(setView).toHaveBeenCalledWith([45.0, -69.0], 12);
+  });
+
   it('does not throw when the map is not ready yet on the first change', () => {
     component.campgrounds = [
       { id: '1', lat: 44.3, lng: -68.2, name: 'A' } as any,
@@ -210,6 +237,7 @@ describe('CampgroundMapComponent', () => {
     expect(() =>
       component.ngOnChanges({ campgrounds: {} as any, ordered: {} as any }),
     ).not.toThrow();
-    expect(component.markerLayers.length).toBe(3);
+    expect(component.markerLayers.length).toBe(2);
+    expect(component.routeLayers.length).toBe(1);
   });
 });
