@@ -44,7 +44,17 @@ export class FinderComponent implements OnInit {
 
   readonly ALL_AGENCIES = ['NPS', 'USFS', 'BLM', 'USACE', 'FWS'];
   readonly RADIUS_OPTIONS = [25, 50, 100, 250];
+  readonly REGIONS: Record<string, string[]> = {
+    Northeast: ['CT', 'ME', 'MA', 'NH', 'RI', 'VT', 'NJ', 'NY', 'PA'],
+    Midwest: ['IL', 'IN', 'IA', 'KS', 'MI', 'MN', 'MO', 'NE', 'ND', 'OH', 'SD', 'WI'],
+    South: ['AL', 'AR', 'DE', 'FL', 'GA', 'KY', 'LA', 'MD', 'MS', 'NC', 'OK', 'SC', 'TN', 'TX', 'VA', 'WV', 'DC'],
+    West: ['AK', 'AZ', 'CA', 'CO', 'HI', 'ID', 'MT', 'NV', 'NM', 'OR', 'UT', 'WA', 'WY'],
+  };
+  readonly ALL_STATES = Object.values(this.REGIONS).flat();
+  readonly REGION_NAMES = Object.keys(this.REGIONS);
   selectedAgencies: string[] = [...this.ALL_AGENCIES];
+  selectedStates: string[] = [...this.ALL_STATES];
+  selectedRegions: string[] = [...this.REGION_NAMES];
   nearMeEnabled = false;
   radiusMiles = 50;
 
@@ -71,11 +81,18 @@ export class FinderComponent implements OnInit {
       const maxDistanceMeters = this.nearMeEnabled
         ? this.radiusMiles * METERS_PER_MILE
         : SHOW_ALL_RADIUS_M;
+      // Sending the exhaustive state list would exclude any row whose state
+      // hasn't been backfilled yet (state is nullable, unlike agency, so an
+      // "all selected" state filter isn't a true no-op) — send undefined
+      // instead so those rows keep showing up until synced.
+      const states =
+        this.selectedStates.length === this.ALL_STATES.length ? undefined : this.selectedStates;
       const results = await this.campgroundsService.getNearest(
         location,
         50,
         this.selectedAgencies,
         maxDistanceMeters,
+        states,
       );
       this.campgrounds.set(results);
     } catch (err) {
@@ -93,6 +110,11 @@ export class FinderComponent implements OnInit {
 
   onFilterChange(): Promise<void> {
     return this.lastCoords ? this.loadNearest(this.lastCoords) : Promise.resolve();
+  }
+
+  onRegionFilterChange(): Promise<void> {
+    this.selectedStates = this.selectedRegions.flatMap((region) => this.REGIONS[region]);
+    return this.onFilterChange();
   }
 
   onSelectionChange(campground: Campground | null): void {

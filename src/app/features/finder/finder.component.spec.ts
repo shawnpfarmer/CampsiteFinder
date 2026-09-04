@@ -64,7 +64,7 @@ describe('FinderComponent', () => {
     await component.ngOnInit();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
     );
   });
 
@@ -77,7 +77,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, ['USFS'], SHOW_ALL_RADIUS_M,
+      { lat: 44.3, lng: -68.2 }, 50, ['USFS'], SHOW_ALL_RADIUS_M, undefined,
     );
   });
 
@@ -91,7 +91,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, 100 * METERS_PER_MILE,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, 100 * METERS_PER_MILE, undefined,
     );
   });
 
@@ -107,7 +107,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
     );
   });
 
@@ -115,5 +115,48 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).not.toHaveBeenCalled();
+  });
+
+  it('defaults to all states and all regions selected', () => {
+    expect(component.selectedStates).toEqual(component.ALL_STATES);
+    expect(component.selectedRegions).toEqual(component.REGION_NAMES);
+  });
+
+  it('sends no state filter when all states are selected', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+
+    await component.ngOnInit();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
+    );
+  });
+
+  it('reloads with the selected states when the filter changes', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    component.selectedStates = ['CO'];
+    await component.onFilterChange();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, ['CO'],
+    );
+  });
+
+  it('recomputes selected states from the selected regions', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    component.selectedRegions = ['West'];
+    await component.onRegionFilterChange();
+
+    expect(component.selectedStates).toEqual(component.REGIONS['West']);
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, component.REGIONS['West'],
+    );
   });
 });
