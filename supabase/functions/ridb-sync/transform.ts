@@ -1,5 +1,10 @@
 import { resolveAgency, RidbOrganization } from "./agency.ts";
 
+interface RidbAddressRecord {
+  FacilityAddressType?: string;
+  AddressStateCode?: string;
+}
+
 export interface RidbFacilityRecord {
   FacilityID: string;
   FacilityName: string;
@@ -12,6 +17,7 @@ export interface RidbFacilityRecord {
   FacilityEmail?: string;
   FacilityTypeDescription?: string;
   ORGANIZATION?: RidbOrganization[];
+  FACILITYADDRESS?: RidbAddressRecord[];
 }
 
 export interface CampgroundRow {
@@ -28,6 +34,16 @@ export interface CampgroundRow {
   directions_url: string;
   images: unknown[];
   contact: unknown;
+  state: string | null;
+}
+
+// RIDB's field names here are this codebase's best recollection of its
+// schema, unverified against a live response (see plan's Task notes) — a
+// missing/renamed field must degrade to null, never throw.
+function resolveState(addresses: RidbAddressRecord[] | undefined): string | null {
+  if (!addresses || addresses.length === 0) return null;
+  const physical = addresses.find((a) => a.FacilityAddressType === "Physical");
+  return (physical ?? addresses[0]).AddressStateCode ?? null;
 }
 
 export function toCampgroundRow(facility: RidbFacilityRecord): CampgroundRow | null {
@@ -72,5 +88,6 @@ export function toCampgroundRow(facility: RidbFacilityRecord): CampgroundRow | n
     directions_url: "",
     images: [],
     contact: { phone: facility.FacilityPhone ?? "", email: facility.FacilityEmail ?? "" },
+    state: resolveState(facility.FACILITYADDRESS),
   };
 }

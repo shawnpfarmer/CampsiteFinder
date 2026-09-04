@@ -159,3 +159,53 @@ Deno.test("toCampgroundRow defaults optional text fields to empty strings and co
   assertEquals(row?.fees, []);
   assertEquals(row?.images, []);
 });
+
+Deno.test("toCampgroundRow reads state from the Physical address entry", () => {
+  const facility = {
+    FacilityID: "10",
+    FacilityName: "Physical Address Campground",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+    FACILITYADDRESS: [
+      { FacilityAddressType: "Mailing", AddressStateCode: "DC" },
+      { FacilityAddressType: "Physical", AddressStateCode: "WI" },
+    ],
+  };
+
+  const row = toCampgroundRow(facility as any);
+
+  assertEquals(row?.state, "WI");
+});
+
+Deno.test("toCampgroundRow falls back to the first address when none is typed Physical", () => {
+  const facility = {
+    FacilityID: "11",
+    FacilityName: "Mailing Only Campground",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+    FACILITYADDRESS: [{ FacilityAddressType: "Mailing", AddressStateCode: "CO" }],
+  };
+
+  const row = toCampgroundRow(facility as any);
+
+  assertEquals(row?.state, "CO");
+});
+
+Deno.test("toCampgroundRow sets state to null when no address is present", () => {
+  const facility = {
+    FacilityID: "12",
+    FacilityName: "No Address Campground",
+    FacilityDescription: "",
+    FacilityLatitude: 44.0,
+    FacilityLongitude: -90.0,
+    ORGANIZATION: [{ OrgAbbrevName: "USFS" }],
+  };
+
+  const row = toCampgroundRow(facility as any);
+
+  assertEquals(row?.state, null);
+});
