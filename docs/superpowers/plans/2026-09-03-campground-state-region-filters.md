@@ -491,6 +491,21 @@ Add to `src/app/core/services/campgrounds.service.spec.ts` (and update the two e
 
     expect(result[0].state).toBe('ME');
   });
+
+  it('maps the state column onto the returned Campground for getByIds', async () => {
+    rpcSpy.mockResolvedValue({
+      data: [{
+        id: 'cg-1', park_code: 'acad', name: 'Blackwoods', description: 'desc',
+        lat: 44.31, lng: -68.2, agency: 'NPS', state: 'ME', amenities: {}, fees: [],
+        reservation_url: 'https://x', directions_url: 'https://y', images: [], contact: {},
+      }],
+      error: null,
+    });
+
+    const result = await service.getByIds(['cg-1']);
+
+    expect(result[0].state).toBe('ME');
+  });
 ```
 
 Update the existing `'maps RPC rows to Campground objects'`, `'forwards an agency filter to the RPC'`, and `'forwards a max distance filter to the RPC'` tests' `toHaveBeenCalledWith` expectations to add `state_filter: null` alongside the existing `max_distance_m` key, e.g.:
