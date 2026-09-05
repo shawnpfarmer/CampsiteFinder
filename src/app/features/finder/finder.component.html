@@ -21,6 +21,20 @@
         placeholder="Filter by agency"
         name="agencyFilter"
       />
+      <p-multiselect
+        [options]="REGION_NAMES"
+        [(ngModel)]="selectedRegions"
+        (onChange)="onRegionFilterChange()"
+        placeholder="Filter by region"
+        name="regionFilter"
+      />
+      <p-multiselect
+        [options]="ALL_STATES"
+        [(ngModel)]="selectedStates"
+        (onChange)="onFilterChange()"
+        placeholder="Filter by state"
+        name="stateFilter"
+      />
       <label class="near-me-toggle">
         <p-toggleswitch [(ngModel)]="nearMeEnabled" (onChange)="onFilterChange()" name="nearMe" />
         Near me
