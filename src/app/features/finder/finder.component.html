@@ -55,7 +55,11 @@
 
   @if (!loading() && !error()) {
     <div class="finder-layout">
-      <app-campground-map [campgrounds]="campgrounds()" [selectedId]="selected()?.id ?? null" />
+      <app-campground-map
+        [campgrounds]="campgrounds()"
+        [selectedId]="selected()?.id ?? null"
+        (viewDetails)="onViewDetails($event)"
+      />
       <app-campground-table
         [campgrounds]="campgrounds()"
         [selected]="selected()"

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { LeafletMarkerClusterModule } from '@bluehalo/ngx-leaflet-markercluster';
 import * as L from 'leaflet';
@@ -44,6 +44,7 @@ export class CampgroundMapComponent implements OnChanges {
   @Input({ required: true }) campgrounds: Campground[] = [];
   @Input() selectedId: string | null = null;
   @Input() ordered = false;
+  @Output() viewDetails = new EventEmitter<string>();
 
   private readonly tripsService = inject(TripsService);
   private readonly supabase = inject(SupabaseService);
@@ -119,10 +120,20 @@ export class CampgroundMapComponent implements OnChanges {
     name.textContent = campground.name;
     container.appendChild(name);
 
+    const viewDetailsButton = document.createElement('button');
+    viewDetailsButton.className = 'view-details-button';
+    viewDetailsButton.textContent = 'View details ▸';
+    viewDetailsButton.addEventListener('click', () => {
+      this.map?.closePopup();
+      this.viewDetails.emit(campground.id);
+    });
+    container.appendChild(viewDetailsButton);
+
     const trips = this.tripsService.trips();
     if (this.supabase.isAuthenticated && trips.length > 0) {
       const mostRecentTrip = trips[0];
       const button = document.createElement('button');
+      button.className = 'add-to-trip-button';
       button.textContent = 'Add to Trip';
       button.addEventListener('click', async () => {
         button.disabled = true;

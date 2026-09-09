@@ -174,6 +174,52 @@ describe('CampgroundTableComponent', () => {
     expect(panel).toBeFalsy();
   });
 
+  it('shows a collapsed chevron next to a row\'s name by default', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any];
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('.campground-name-link .pi'));
+    expect(icon.nativeElement.classList).toContain('pi-chevron-right');
+  });
+
+  it('flips the chevron once the row is expanded', () => {
+    component.campgrounds = [{ id: '1', name: 'A' } as any];
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('.campground-name-link')).triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('.campground-name-link .pi'));
+    expect(icon.nativeElement.classList).toContain('pi-chevron-down');
+  });
+
+  it('expands the row matching the selected input', () => {
+    const campgrounds = [{ id: '1', name: 'A' } as any, { id: '2', name: 'B' } as any];
+    component.campgrounds = campgrounds;
+    fixture.detectChanges();
+
+    component.selected = campgrounds[1];
+    component.ngOnChanges({ selected: {} as any });
+    fixture.detectChanges();
+
+    const panel = fixture.debugElement.query(By.directive(CampgroundDetailPanelComponent));
+    expect(panel.componentInstance.campground.id).toBe('2');
+  });
+
+  it('jumps the table to the page containing a newly selected row', () => {
+    component.campgrounds = Array.from(
+      { length: 25 },
+      (_, i) => ({ id: `${i}`, name: `Row ${i}` }) as any,
+    );
+    fixture.detectChanges();
+
+    component.selected = { id: '21', name: 'Row 21' } as any;
+    component.ngOnChanges({ selected: {} as any });
+    fixture.detectChanges();
+
+    expect((component as any).table?.first()).toBe(20);
+  });
+
   it('only expands one row at a time', () => {
     component.campgrounds = [{ id: '1', name: 'A' } as any, { id: '2', name: 'B' } as any];
     fixture.detectChanges();

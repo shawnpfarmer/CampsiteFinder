@@ -146,6 +146,27 @@ describe('FinderComponent', () => {
     );
   });
 
+  it('selects the campground the map reports viewDetails for', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    const campground = { id: '1', name: 'A' } as any;
+    campgroundsSpy.getNearest.mockResolvedValue([campground]);
+    await component.ngOnInit();
+
+    component.onViewDetails('1');
+
+    expect(component.selected()).toBe(campground);
+  });
+
+  it('clears the selection when viewDetails reports an id no longer in the results', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([{ id: '1', name: 'A' } as any]);
+    await component.ngOnInit();
+
+    component.onViewDetails('missing');
+
+    expect(component.selected()).toBeNull();
+  });
+
   it('recomputes selected states from the selected regions', async () => {
     geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
     campgroundsSpy.getNearest.mockResolvedValue([]);

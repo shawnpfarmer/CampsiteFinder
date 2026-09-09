@@ -120,4 +120,9 @@ export class FinderComponent implements OnInit {
   onSelectionChange(campground: Campground | null): void {
     this.selected.set(campground);
   }
+
+  onViewDetails(campgroundId: string): void {
+    const campground = this.campgrounds().find((c) => c.id === campgroundId) ?? null;
+    this.selected.set(campground);
+  }
 }

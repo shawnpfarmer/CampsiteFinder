@@ -30,7 +30,13 @@ describe('CampgroundMapComponent', () => {
   function popupButton(markerIndex = 0): HTMLButtonElement | null {
     const marker = component.markerLayers[markerIndex] as any;
     const content = marker.getPopup().getContent() as HTMLElement;
-    return content.querySelector('button');
+    return content.querySelector('button.add-to-trip-button');
+  }
+
+  function viewDetailsButton(markerIndex = 0): HTMLButtonElement | null {
+    const marker = component.markerLayers[markerIndex] as any;
+    const content = marker.getPopup().getContent() as HTMLElement;
+    return content.querySelector('button.view-details-button');
   }
 
   it('includes an Add to Trip button in the popup when signed in and a trip exists', () => {
@@ -103,6 +109,25 @@ describe('CampgroundMapComponent', () => {
 
     expect(button.textContent).toBe('Add to Trip');
     expect(button.disabled).toBe(false);
+  });
+
+  it('includes a View details link in every marker popup', () => {
+    component.campgrounds = [{ id: '1', lat: 44.3, lng: -68.2, name: 'A' } as any];
+
+    component.ngOnChanges({ campgrounds: {} as any });
+
+    expect(viewDetailsButton()).toBeTruthy();
+  });
+
+  it('emits viewDetails with the campground id when the popup link is clicked', () => {
+    let emitted: string | undefined;
+    component.viewDetails.subscribe((id) => (emitted = id));
+    component.campgrounds = [{ id: '1', lat: 44.3, lng: -68.2, name: 'A' } as any];
+    component.ngOnChanges({ campgrounds: {} as any });
+
+    viewDetailsButton()!.click();
+
+    expect(emitted).toBe('1');
   });
 
   it('creates one marker layer per campground', () => {

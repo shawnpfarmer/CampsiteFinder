@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { FavoriteToggleComponent } from '../../../shared/favorite-toggle/favorite-toggle.component';
 import { AddToTripComponent } from '../../../shared/add-to-trip/add-to-trip.component';
@@ -22,9 +22,10 @@ import { Campground } from '../../../core/models/campground.model';
   ],
   template: `
     <p-table
+      #dt
       [value]="campgrounds"
       [paginator]="true"
-      [rows]="10"
+      [rows]="rows"
       selectionMode="single"
       [(selection)]="selected"
       (selectionChange)="onSelectionChange($event)"
@@ -45,7 +46,12 @@ import { Campground } from '../../../core/models/campground.model';
       </ng-template>
       <ng-template #body let-campground>
         <tr [pSelectableRow]="campground">
-          <td><a class="campground-name-link" (click)="toggleExpanded(campground.id)">{{ campground.name }}</a></td>
+          <td>
+            <a class="campground-name-link" (click)="toggleExpanded(campground.id)">
+              <i class="pi" [class.pi-chevron-down]="expandedId === campground.id" [class.pi-chevron-right]="expandedId !== campground.id"></i>
+              {{ campground.name }}
+            </a>
+          </td>
           <td>{{ campground.parkCode }}</td>
           <td>{{ campground.agency }}</td>
           @if (showDistance) {
@@ -79,6 +85,10 @@ import { Campground } from '../../../core/models/campground.model';
     .campground-name-link {
       cursor: pointer;
     }
+    .campground-name-link .pi {
+      margin-right: 0.35rem;
+      font-size: 0.8rem;
+    }
   `,
 })
 export class CampgroundTableComponent implements OnChanges {
@@ -90,6 +100,10 @@ export class CampgroundTableComponent implements OnChanges {
   @Output() selectedChange = new EventEmitter<Campground | null>();
   @Output() noteChange = new EventEmitter<{ campgroundId: string; note: string }>();
 
+  @ViewChild('dt') private table?: Table;
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  readonly rows = 10;
   noteDrafts: Record<string, string> = {};
   expandedId: string | null = null;
 
@@ -114,6 +128,22 @@ export class CampgroundTableComponent implements OnChanges {
           this.noteDrafts[campgroundId] = note ?? '';
         }
       });
+    }
+    // Ties the table to selections made elsewhere (e.g. "View details" on a
+    // map marker) — jumping straight to that row's page and expanding it, the
+    // same outcome as clicking the row here. A selection clearing to null
+    // (e.g. collapsing via the name link) is left alone, since that already
+    // manages expandedId itself.
+    if (changes['selected'] && this.selected) {
+      this.expandedId = this.selected.id;
+      const index = this.campgrounds.findIndex((c) => c.id === this.selected!.id);
+      if (index >= 0 && this.table) {
+        this.table.first.set(Math.floor(index / this.rows) * this.rows);
+      }
+      // p-table's row template is projected into an internal OnPush view, so
+      // a plain field change here (expandedId) doesn't get picked up there on
+      // its own the way a click originating inside the table would — force it.
+      this.cdr.detectChanges();
     }
   }
 
