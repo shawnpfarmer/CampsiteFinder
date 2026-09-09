@@ -136,6 +136,32 @@ export class FinderComponent implements OnInit {
     return this.onFilterChange();
   }
 
+  // PrimeNG's multiselect header "select/deselect all" checkbox only reflects
+  // and drives selection state on its own when `selectAll` is left unbound.
+  // Binding it (done here so the checkbox's checked state actually matches
+  // reality — see conversation) switches it to "controlled" mode: the
+  // component stops updating the model itself and only emits this event, so
+  // each filter needs its own handler to apply the all-or-nothing toggle.
+  onToggleAllAgencies(checked: boolean): Promise<void> {
+    this.selectedAgencies = checked ? [...this.ALL_AGENCIES] : [];
+    return this.onFilterChange();
+  }
+
+  onToggleAllRegions(checked: boolean): Promise<void> {
+    this.selectedRegions = checked ? [...this.REGION_NAMES] : [];
+    return this.onRegionFilterChange();
+  }
+
+  onToggleAllStates(checked: boolean): Promise<void> {
+    this.selectedStates = checked ? [...this.ALL_STATES] : [];
+    return this.onFilterChange();
+  }
+
+  onToggleAllParks(checked: boolean): Promise<void> {
+    this.selectedParks = checked ? [...this.parkCodes()] : [];
+    return this.onFilterChange();
+  }
+
   onSelectionChange(campground: Campground | null): void {
     this.selected.set(campground);
   }

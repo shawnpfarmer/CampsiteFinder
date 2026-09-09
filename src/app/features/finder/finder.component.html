@@ -17,21 +17,30 @@
       <p-multiselect
         [options]="ALL_AGENCIES"
         [(ngModel)]="selectedAgencies"
+        [selectAll]="selectedAgencies.length === ALL_AGENCIES.length"
+        (onSelectAllChange)="onToggleAllAgencies($event.checked)"
         (onChange)="onFilterChange()"
+        selectedItemsLabel="{0} agencies selected"
         placeholder="Filter by agency"
         name="agencyFilter"
       />
       <p-multiselect
         [options]="REGION_NAMES"
         [(ngModel)]="selectedRegions"
+        [selectAll]="selectedRegions.length === REGION_NAMES.length"
+        (onSelectAllChange)="onToggleAllRegions($event.checked)"
         (onChange)="onRegionFilterChange()"
+        selectedItemsLabel="{0} regions selected"
         placeholder="Filter by region"
         name="regionFilter"
       />
       <p-multiselect
         [options]="ALL_STATES"
         [(ngModel)]="selectedStates"
+        [selectAll]="selectedStates.length === ALL_STATES.length"
+        (onSelectAllChange)="onToggleAllStates($event.checked)"
         (onChange)="onFilterChange()"
+        selectedItemsLabel="{0} states selected"
         placeholder="Filter by state"
         name="stateFilter"
       />
@@ -39,7 +48,10 @@
         <p-multiselect
           [options]="parkCodes()"
           [(ngModel)]="selectedParks"
+          [selectAll]="selectedParks.length === parkCodes().length"
+          (onSelectAllChange)="onToggleAllParks($event.checked)"
           (onChange)="onFilterChange()"
+          selectedItemsLabel="{0} parks selected"
           placeholder="Filter by park"
           name="parkFilter"
         />

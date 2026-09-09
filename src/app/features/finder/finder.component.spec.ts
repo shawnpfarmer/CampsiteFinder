@@ -204,6 +204,100 @@ describe('FinderComponent', () => {
     );
   });
 
+  it('selects every agency when the agency select-all checkbox is checked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+    component.selectedAgencies = ['NPS'];
+
+    await component.onToggleAllAgencies(true);
+
+    expect(component.selectedAgencies).toEqual(component.ALL_AGENCIES);
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, undefined,
+    );
+  });
+
+  it('clears every agency when the agency select-all checkbox is unchecked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    await component.onToggleAllAgencies(false);
+
+    expect(component.selectedAgencies).toEqual([]);
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, [], SHOW_ALL_RADIUS_M, undefined, undefined,
+    );
+  });
+
+  it('selects every region and recomputes states when the region select-all checkbox is checked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+    component.selectedRegions = ['West'];
+
+    await component.onToggleAllRegions(true);
+
+    expect(component.selectedRegions).toEqual(component.REGION_NAMES);
+    expect(component.selectedStates).toEqual(component.ALL_STATES);
+  });
+
+  it('clears every region and its derived states when the region select-all checkbox is unchecked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    await component.onToggleAllRegions(false);
+
+    expect(component.selectedRegions).toEqual([]);
+    expect(component.selectedStates).toEqual([]);
+  });
+
+  it('selects every state when the state select-all checkbox is checked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+    component.selectedStates = ['CO'];
+
+    await component.onToggleAllStates(true);
+
+    expect(component.selectedStates).toEqual(component.ALL_STATES);
+  });
+
+  it('clears every state when the state select-all checkbox is unchecked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    await component.ngOnInit();
+
+    await component.onToggleAllStates(false);
+
+    expect(component.selectedStates).toEqual([]);
+  });
+
+  it('selects every park when the park select-all checkbox is checked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    campgroundsSpy.getParkCodes.mockResolvedValue(['acad', 'yell']);
+    await component.ngOnInit();
+    component.selectedParks = ['acad'];
+
+    await component.onToggleAllParks(true);
+
+    expect(component.selectedParks).toEqual(['acad', 'yell']);
+  });
+
+  it('clears every park when the park select-all checkbox is unchecked', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    campgroundsSpy.getParkCodes.mockResolvedValue(['acad', 'yell']);
+    await component.ngOnInit();
+
+    await component.onToggleAllParks(false);
+
+    expect(component.selectedParks).toEqual([]);
+  });
+
   it('recomputes selected states from the selected regions', async () => {
     geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
     campgroundsSpy.getNearest.mockResolvedValue([]);
