@@ -13,6 +13,7 @@ export class CampgroundsService {
     agencies?: string[],
     maxDistanceMeters?: number,
     states?: string[],
+    parkCodes?: string[],
   ): Promise<Campground[]> {
     // Supabase/PostgREST caps any single response at 1000 rows (its default
     // max-rows setting) regardless of the RPC's own result_limit — when
@@ -32,6 +33,7 @@ export class CampgroundsService {
           agency_filter: agencies ?? null,
           max_distance_m: maxDistanceMeters ?? null,
           state_filter: states ?? null,
+          park_filter: parkCodes ?? null,
         })
         .range(offset, offset + PAGE_SIZE - 1);
 
@@ -85,6 +87,22 @@ export class CampgroundsService {
       contact: row.contact,
       distanceMeters: 0,
     }));
+  }
+
+  // park_code only exists for NPS units — RIDB-sourced campgrounds (USFS,
+  // BLM, USACE, FWS) never have one, so the distinct set here is inherently
+  // a subset of all campgrounds, not something that needs a null-tolerant
+  // filter the way state does.
+  async getParkCodes(): Promise<string[]> {
+    const { data, error } = await this.supabase.client
+      .from('campgrounds')
+      .select('park_code')
+      .not('park_code', 'is', null);
+
+    if (error) throw error;
+
+    const codes = new Set((data ?? []).map((row: any) => row.park_code as string));
+    return [...codes].sort();
   }
 
   async searchByName(query: string): Promise<{ id: string; name: string }[]> {

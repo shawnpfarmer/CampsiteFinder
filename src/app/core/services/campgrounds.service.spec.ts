@@ -37,7 +37,7 @@ describe('CampgroundsService', () => {
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
       user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
-      max_distance_m: null, state_filter: null,
+      max_distance_m: null, state_filter: null, park_filter: null,
     });
     expect(result[0].name).toBe('Blackwoods');
     expect(result[0].agency).toBe('NPS');
@@ -51,7 +51,7 @@ describe('CampgroundsService', () => {
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
       user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: ['USFS', 'BLM'],
-      max_distance_m: null, state_filter: null,
+      max_distance_m: null, state_filter: null, park_filter: null,
     });
   });
 
@@ -62,7 +62,7 @@ describe('CampgroundsService', () => {
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
       user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
-      max_distance_m: 80467, state_filter: null,
+      max_distance_m: 80467, state_filter: null, park_filter: null,
     });
   });
 
@@ -73,7 +73,18 @@ describe('CampgroundsService', () => {
 
     expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
       user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
-      max_distance_m: null, state_filter: ['CO', 'WY'],
+      max_distance_m: null, state_filter: ['CO', 'WY'], park_filter: null,
+    });
+  });
+
+  it('forwards a park filter to the RPC', async () => {
+    rpcSpy.mockReturnValue(chainableRpc([]));
+
+    await service.getNearest({ lat: 44.3, lng: -68.1 }, 50, undefined, undefined, undefined, ['acad', 'yell']);
+
+    expect(rpcSpy).toHaveBeenCalledWith('nearest_campgrounds', {
+      user_lat: 44.3, user_lng: -68.1, result_limit: 50, agency_filter: null,
+      max_distance_m: null, state_filter: null, park_filter: ['acad', 'yell'],
     });
   });
 
@@ -168,6 +179,37 @@ describe('CampgroundsService', () => {
     expect(builder.ilike).toHaveBeenCalledWith('name', '%black%');
     expect(builder.limit).toHaveBeenCalledWith(20);
     expect(results).toEqual([{ id: 'cg-1', name: 'Blackwoods Campground' }]);
+  });
+
+  it('fetches the distinct, sorted set of known park codes', async () => {
+    const builder: any = {};
+    ['select', 'not'].forEach((method) => {
+      builder[method] = vi.fn().mockReturnValue(builder);
+    });
+    builder.then = (resolve: any) =>
+      resolve({
+        data: [{ park_code: 'yell' }, { park_code: 'acad' }, { park_code: 'yell' }],
+        error: null,
+      });
+    fromSpy.mockReturnValue(builder);
+
+    const codes = await service.getParkCodes();
+
+    expect(fromSpy).toHaveBeenCalledWith('campgrounds');
+    expect(builder.select).toHaveBeenCalledWith('park_code');
+    expect(builder.not).toHaveBeenCalledWith('park_code', 'is', null);
+    expect(codes).toEqual(['acad', 'yell']);
+  });
+
+  it('throws when getParkCodes errors', async () => {
+    const builder: any = {};
+    ['select', 'not'].forEach((method) => {
+      builder[method] = vi.fn().mockReturnValue(builder);
+    });
+    builder.then = (resolve: any) => resolve({ data: null, error: new Error('boom') });
+    fromSpy.mockReturnValue(builder);
+
+    await expect(service.getParkCodes()).rejects.toThrow('boom');
   });
 
   it('throws when searchByName errors', async () => {

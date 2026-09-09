@@ -8,11 +8,11 @@ describe('FinderComponent', () => {
   let fixture: ComponentFixture<FinderComponent>;
   let component: FinderComponent;
   let geolocationSpy: { getCurrentPosition: ReturnType<typeof vi.fn> };
-  let campgroundsSpy: { getNearest: ReturnType<typeof vi.fn> };
+  let campgroundsSpy: { getNearest: ReturnType<typeof vi.fn>; getParkCodes: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     geolocationSpy = { getCurrentPosition: vi.fn() };
-    campgroundsSpy = { getNearest: vi.fn() };
+    campgroundsSpy = { getNearest: vi.fn(), getParkCodes: vi.fn().mockResolvedValue([]) };
 
     TestBed.configureTestingModule({
       imports: [FinderComponent],
@@ -64,7 +64,7 @@ describe('FinderComponent', () => {
     await component.ngOnInit();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, undefined,
     );
   });
 
@@ -77,7 +77,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, ['USFS'], SHOW_ALL_RADIUS_M, undefined,
+      { lat: 44.3, lng: -68.2 }, 50, ['USFS'], SHOW_ALL_RADIUS_M, undefined, undefined,
     );
   });
 
@@ -91,7 +91,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, 100 * METERS_PER_MILE, undefined,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, 100 * METERS_PER_MILE, undefined, undefined,
     );
   });
 
@@ -107,7 +107,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, undefined,
     );
   });
 
@@ -129,7 +129,7 @@ describe('FinderComponent', () => {
     await component.ngOnInit();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined,
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, undefined,
     );
   });
 
@@ -142,7 +142,7 @@ describe('FinderComponent', () => {
     await component.onFilterChange();
 
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, ['CO'],
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, ['CO'], undefined,
     );
   });
 
@@ -167,6 +167,43 @@ describe('FinderComponent', () => {
     expect(component.selected()).toBeNull();
   });
 
+  it('loads the known park codes on init and selects them all by default', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    campgroundsSpy.getParkCodes.mockResolvedValue(['acad', 'yell']);
+
+    await component.ngOnInit();
+
+    expect(component.parkCodes()).toEqual(['acad', 'yell']);
+    expect(component.selectedParks).toEqual(['acad', 'yell']);
+  });
+
+  it('sends no park filter when all parks are selected', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    campgroundsSpy.getParkCodes.mockResolvedValue(['acad', 'yell']);
+
+    await component.ngOnInit();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, undefined,
+    );
+  });
+
+  it('reloads with the selected parks when the filter changes', async () => {
+    geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
+    campgroundsSpy.getNearest.mockResolvedValue([]);
+    campgroundsSpy.getParkCodes.mockResolvedValue(['acad', 'yell']);
+    await component.ngOnInit();
+
+    component.selectedParks = ['acad'];
+    await component.onFilterChange();
+
+    expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, undefined, ['acad'],
+    );
+  });
+
   it('recomputes selected states from the selected regions', async () => {
     geolocationSpy.getCurrentPosition.mockResolvedValue({ lat: 44.3, lng: -68.2 });
     campgroundsSpy.getNearest.mockResolvedValue([]);
@@ -177,7 +214,7 @@ describe('FinderComponent', () => {
 
     expect(component.selectedStates).toEqual(component.REGIONS['West']);
     expect(campgroundsSpy.getNearest).toHaveBeenLastCalledWith(
-      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, component.REGIONS['West'],
+      { lat: 44.3, lng: -68.2 }, 50, component.ALL_AGENCIES, SHOW_ALL_RADIUS_M, component.REGIONS['West'], undefined,
     );
   });
 });

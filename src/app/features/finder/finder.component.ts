@@ -58,6 +58,12 @@ export class FinderComponent implements OnInit {
   nearMeEnabled = false;
   radiusMiles = 50;
 
+  // Unlike agency/state/region, park codes aren't a fixed enum — they're
+  // whatever NPS units are actually present in the data — so this list is
+  // fetched once rather than hardcoded, and starts empty until it resolves.
+  readonly parkCodes = signal<string[]>([]);
+  selectedParks: string[] = [];
+
   manualLat: number | null = null;
   manualLng: number | null = null;
 
@@ -69,7 +75,17 @@ export class FinderComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    await this.loadNearest();
+    await Promise.all([this.loadNearest(), this.loadParkCodes()]);
+  }
+
+  private async loadParkCodes(): Promise<void> {
+    try {
+      const codes = await this.campgroundsService.getParkCodes();
+      this.parkCodes.set(codes);
+      this.selectedParks = [...codes];
+    } catch {
+      // Non-critical: the park filter just ends up with nothing to offer.
+    }
   }
 
   async loadNearest(coords?: Coordinates): Promise<void> {
@@ -87,12 +103,15 @@ export class FinderComponent implements OnInit {
       // instead so those rows keep showing up until synced.
       const states =
         this.selectedStates.length === this.ALL_STATES.length ? undefined : this.selectedStates;
+      const parks =
+        this.selectedParks.length === this.parkCodes().length ? undefined : this.selectedParks;
       const results = await this.campgroundsService.getNearest(
         location,
         50,
         this.selectedAgencies,
         maxDistanceMeters,
         states,
+        parks,
       );
       this.campgrounds.set(results);
     } catch (err) {

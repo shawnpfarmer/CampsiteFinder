@@ -35,6 +35,15 @@
         placeholder="Filter by state"
         name="stateFilter"
       />
+      @if (parkCodes().length > 0) {
+        <p-multiselect
+          [options]="parkCodes()"
+          [(ngModel)]="selectedParks"
+          (onChange)="onFilterChange()"
+          placeholder="Filter by park"
+          name="parkFilter"
+        />
+      }
       <label class="near-me-toggle">
         <p-toggleswitch [(ngModel)]="nearMeEnabled" (onChange)="onFilterChange()" name="nearMe" />
         Near me
